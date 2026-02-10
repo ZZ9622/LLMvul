@@ -1,0 +1,38 @@
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Output (no output in repo)
+log/
+plots/
+analysis/
+output/
+*.log
+
+# Data (optional: uncomment if not committing large data)
+# data/*.jsonl
+# data/*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# circuit-tracer submodule build
+circuit-tracer/circuit-tracer/build/
+circuit-tracer/circuit-tracer/*.egg-info/
