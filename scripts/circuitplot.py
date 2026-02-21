@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 import os
 import sys
+# ── Repository root & output directory (auto-detected) ───────────────────────
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+OUTPUT_BASE = os.environ.get(
+    "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
+)
+# ── circuit-tracer path ───────────────────────────────────────────────────────
+_CT_PATH = os.path.join(ROOT_DIR, "circuit-tracer", "circuit-tracer")
+if _CT_PATH not in sys.path:
+    sys.path.insert(0, _CT_PATH)
 import json
 import torch
 import matplotlib
@@ -11,13 +21,10 @@ from circuit_tracer.replacement_model import ReplacementModel
 from circuit_tracer.attribution.attribute import attribute
 import warnings
 
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(_REPO_ROOT, "circuit-tracer", "circuit-tracer"))
-sys.path.insert(0, _REPO_ROOT)
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import config
-
 try:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
     from visualize_custom import visualize_graph
     print("[INFO] Successfully imported visualize_graph from visualize_custom.")
 except ImportError as e:
@@ -26,16 +33,16 @@ except ImportError as e:
 
 TARGET_IDS = [196316, 90797, 205736, 220195]
 
-VUL_PATH = os.path.join(config.DATA_DIR, "primevul236.jsonl")
-NONVUL_PATH = os.path.join(config.DATA_DIR, "primenonvul236.jsonl")
-MODEL_NAME = config.MODEL_NAME
+VUL_PATH = os.path.join(ROOT_DIR, "data", "primevul236.jsonl")
+NONVUL_PATH = os.path.join(ROOT_DIR, "data", "primenonvul236.jsonl")
+MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-LOG_DIR = os.path.join(config.LOG_BASE, ts)
-PLOT_DIR = os.path.join(config.PLOT_BASE, ts)
-CIRCUIT_DIR = os.path.join(PLOT_DIR, "circuits")
-config.ensure_output_dirs(LOG_DIR, PLOT_DIR)
+LOG_DIR = os.path.join(OUTPUT_BASE, "log", ts)
+PLOT_DIR = os.path.join(OUTPUT_BASE, "plots", ts)
+CIRCUIT_DIR = f"{PLOT_DIR}/circuits"
+os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(CIRCUIT_DIR, exist_ok=True)
 
 MAX_FEATURE_NODES = 5000
@@ -54,7 +61,7 @@ def patch_model_loading():
     original = loading.get_official_model_name
     loading.get_official_model_name = (
         lambda model_name: "google/gemma-2-2b"
-        if model_name == MODEL_NAME
+        if model_name == MODEL_PATH
         else original(model_name)
     )
 
@@ -62,7 +69,7 @@ def patch_model_config_loading():
     import transformer_lens.loading_from_pretrained as loading
     original = loading.get_pretrained_model_config
     def patched(model_name, **kwargs):
-        if model_name == MODEL_NAME:
+        if model_name == MODEL_PATH:
             from transformers import AutoConfig
             return AutoConfig.from_pretrained(model_name)
         return original(model_name, **kwargs)
@@ -71,9 +78,9 @@ def patch_model_config_loading():
 patch_model_loading()
 patch_model_config_loading()
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 rm = ReplacementModel.from_pretrained(
-    MODEL_NAME,
+    MODEL_PATH,
     transcoder_set="gemma",
     device=DEVICE,
     torch_dtype=torch.float16

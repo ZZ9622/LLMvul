@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+# ── Repository root & output directory (auto-detected) ───────────────────────
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+OUTPUT_BASE = os.environ.get(
+    "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
+)
 import sys
 import json
 import torch
@@ -14,16 +20,20 @@ from transformers import AutoTokenizer
 from collections import defaultdict
 import gc
 
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(_REPO_ROOT, "circuit-tracer", "circuit-tracer"))
-sys.path.insert(0, _REPO_ROOT)
-import config
-
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "circuit-tracer", "circuit-tracer"))
 from circuit_tracer.replacement_model import ReplacementModel
 
-DATA_PATH = os.path.join(config.DATA_DIR, "tp_tn_samples.jsonl")
-NEURON_ANALYSIS_PATH = os.path.join(config.DATA_DIR, "neuron_analysis.json")
-MODEL_NAME = config.MODEL_NAME
+DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")
+
+# ── Check for tp_tn_samples.jsonl ────────────────────────────────────────────
+if not os.path.exists(DATA_PATH):
+    print(f"[ERROR] {DATA_PATH} not found.")
+    print("[INFO]  This file is produced by running: python scripts/prime.py")
+    print("[INFO]  Then copy TP/TN results from the output to data/tp_tn_samples.jsonl")
+    raise SystemExit(1)
+
+NEURON_ANALYSIS_PATH = os.path.join(ROOT_DIR, "data", "neuron_analysis.json")
+MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 MAX_SAMPLES = None
 MAX_SEQ_LENGTH = 512
@@ -62,9 +72,10 @@ except Exception as e:
     }
 
 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-LOG_DIR = os.path.join(config.LOG_BASE, f"causal_validation_{ts}")
-PLOT_DIR = os.path.join(config.PLOT_BASE, f"causal_validation_{ts}")
-config.ensure_output_dirs(LOG_DIR, PLOT_DIR)
+LOG_DIR = os.path.join(OUTPUT_BASE, "log", f"causal_validation_{ts}")
+PLOT_DIR = os.path.join(OUTPUT_BASE, "plots", f"causal_validation_{ts}")
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(PLOT_DIR, exist_ok=True)
 
 log_file = open(os.path.join(LOG_DIR, f"causal_validation_{ts}.txt"), "w")
 sys.stdout = log_file
@@ -88,7 +99,7 @@ def patch_model_loading():
     original = loading.get_official_model_name
     loading.get_official_model_name = (
         lambda model_name: "google/gemma-2-2b"
-        if model_name == MODEL_NAME
+        if model_name == MODEL_PATH
         else original(model_name)
     )
 
@@ -96,7 +107,7 @@ def patch_model_config_loading():
     import transformer_lens.loading_from_pretrained as loading
     original = loading.get_pretrained_model_config
     def patched(model_name, **kwargs):
-        if model_name == MODEL_NAME:
+        if model_name == MODEL_PATH:
             from transformers import AutoConfig
             return AutoConfig.from_pretrained(model_name)
         return original(model_name, **kwargs)
@@ -106,12 +117,12 @@ patch_model_loading()
 patch_model_config_loading()
 
 print("\n[1/7] Loading Model & Tokenizer...", flush=True)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
 rm = ReplacementModel.from_pretrained(
-    MODEL_NAME,
+    MODEL_PATH,
     transcoder_set="gemma",
     device=DEVICE,
     dtype=torch.float16

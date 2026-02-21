@@ -9,29 +9,37 @@ from transformers import AutoTokenizer
 from collections import defaultdict
 import sys
 import os
+# ── Repository root & output directory (auto-detected) ───────────────────────
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+OUTPUT_BASE = os.environ.get(
+    "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
+)
 
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(_REPO_ROOT, "circuit-tracer", "circuit-tracer"))
-sys.path.insert(0, _REPO_ROOT)
-import config
+MODEL_PATH = "Chun9622/llmvul-finetuned-gemma" 
+DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")
 
-MODEL_NAME = config.MODEL_NAME
-DATA_PATH = os.path.join(config.DATA_DIR, "tp_tn_samples.jsonl")
+# ── Check for tp_tn_samples.jsonl ────────────────────────────────────────────
+if not os.path.exists(DATA_PATH):
+    print(f"[ERROR] {DATA_PATH} not found.")
+    print("[INFO]  This file is produced by running: python scripts/prime.py")
+    print("[INFO]  Then copy TP/TN results from the output to data/tp_tn_samples.jsonl")
+    raise SystemExit(1)
+
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 NUM_SAMPLES = None
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "circuit-tracer", "circuit-tracer"))
 from circuit_tracer.replacement_model import ReplacementModel
 
 def load_data(path, label_type, limit=None, return_vuln_type=False):
     samples = []
-    if not os.path.isfile(path):
-        print(f"[WARN] {path} not found. Run prime.py first to generate TP/TN samples.")
-        return samples
     with open(path, 'r') as f:
         for line in f:
             d = json.loads(line)
             if d.get('prediction_type') == label_type:
                 code = d.get('func', '').strip()
+                
                 cwe_list = d.get('cwe', [])
                 vuln_type = cwe_list[0] if cwe_list else 'unknown'
                 if code:
@@ -40,29 +48,33 @@ def load_data(path, label_type, limit=None, return_vuln_type=False):
                         samples.append((prompt, vuln_type))
                     else:
                         samples.append(prompt)
-            if limit and len(samples) >= limit:
-                break
+            if limit and len(samples) >= limit: break
     return samples
 
 def get_l2_norms(model, tokenizer, samples, vuln_types=None):
     layer_norms = defaultdict(list)
     type_layer_norms = defaultdict(lambda: defaultdict(list))
+    
     for i, item in enumerate(samples):
         if isinstance(item, tuple):
             prompt, vuln_type = item
         else:
             prompt = item
             vuln_type = None
+            
         inputs = tokenizer(prompt, return_tensors='pt').to(DEVICE)
         with torch.no_grad():
             _, cache = model.run_with_cache(inputs['input_ids'], return_type=None)
+        
         for layer in range(model.cfg.n_layers):
             act = cache[f"blocks.{layer}.hook_resid_post"]
-            vec = act[0, -1, :]
-            norm = torch.norm(vec, p=2).item()
+            vec = act[0, -1, :] 
+            norm = torch.norm(vec, p=2).item() 
             layer_norms[layer].append(norm)
+            
             if vuln_type and vuln_types:
                 type_layer_norms[vuln_type][layer].append(norm)
+            
     return layer_norms, type_layer_norms
 
 def cohens_d(x, y):
@@ -79,31 +91,18 @@ def bootstrap_ci(x, y, n_boot=1000, ci=95):
         x_sample = np.random.choice(x, len(x), replace=True)
         y_sample = np.random.choice(y, len(y), replace=True)
         diffs.append(np.mean(x_sample) - np.mean(y_sample))
+    
     lower = np.percentile(diffs, (100-ci)/2)
     upper = np.percentile(diffs, 100 - (100-ci)/2)
     return lower, upper
 
 import transformer_lens.loading_from_pretrained as loading
-loading.get_official_model_name = lambda x: "google/gemma-2-2b" if x == MODEL_NAME else x
-
-def _patch_config():
-    orig = loading.get_pretrained_model_config
-    def patched(model_name, **kwargs):
-        if model_name == MODEL_NAME:
-            from transformers import AutoConfig
-            return AutoConfig.from_pretrained(model_name)
-        return orig(model_name, **kwargs)
-    loading.get_pretrained_model_config = patched
-_patch_config()
-
-rm = ReplacementModel.from_pretrained(MODEL_NAME, transcoder_set="gemma", device=DEVICE, dtype=torch.float16)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+loading.get_official_model_name = lambda x: "google/gemma-2-2b" if x == MODEL_PATH else x
+rm = ReplacementModel.from_pretrained(MODEL_PATH, transcoder_set="gemma", device=DEVICE, dtype=torch.float16)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 
 vul_prompts = load_data(DATA_PATH, 'TP', NUM_SAMPLES, return_vuln_type=True)
 safe_prompts = load_data(DATA_PATH, 'TN', NUM_SAMPLES, return_vuln_type=False)
-if not vul_prompts or not safe_prompts:
-    print("No TP or TN samples. Exiting.")
-    sys.exit(0)
 
 vul_norms, vul_type_norms = get_l2_norms(rm, tokenizer, vul_prompts, vuln_types=True)
 safe_norms, _ = get_l2_norms(rm, tokenizer, safe_prompts, vuln_types=False)
@@ -117,9 +116,11 @@ ci_uppers = []
 for layer in range(n_layers):
     v_data = vul_norms[layer]
     s_data = safe_norms[layer]
+    
     t_stat, p_val = stats.ttest_ind(v_data, s_data, equal_var=False)
     d = cohens_d(v_data, s_data)
     lower, upper = bootstrap_ci(v_data, s_data)
+    
     p_values.append(p_val)
     cohens_ds.append(d)
     ci_lowers.append(lower)
@@ -140,12 +141,15 @@ vuln_types = sorted(vul_type_norms.keys())
 for vtype in vuln_types:
     print(f"\nVulnerability_Type: {vtype}")
     print(f"Layer,P_Value,Cohen_d,CI_Lower,CI_Upper")
+    
     for layer in range(n_layers):
         if layer in vul_type_norms[vtype] and len(vul_type_norms[vtype][layer]) > 1:
             vt_data = vul_type_norms[vtype][layer]
             s_data = safe_norms[layer]
+            
             if len(vt_data) > 1 and len(s_data) > 1:
                 t_stat, p_val = stats.ttest_ind(vt_data, s_data, equal_var=False)
                 d = cohens_d(vt_data, s_data)
                 lower, upper = bootstrap_ci(vt_data, s_data, n_boot=500)
                 print(f"{layer},{p_val:.6e},{d:.4f},{lower:.4f},{upper:.4f}")
+

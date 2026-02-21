@@ -1,12 +1,16 @@
+
 import torch
 import numpy as np
 import os
+# ── Repository root & output directory (auto-detected) ───────────────────────
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+OUTPUT_BASE = os.environ.get(
+    "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
+)
 import sys
 
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-_REPO_ROOT = os.path.dirname(_script_dir)
-sys.path.insert(0, os.path.join(_REPO_ROOT, "circuit-tracer", "circuit-tracer"))
-sys.path.insert(0, _REPO_ROOT)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "circuit-tracer", "circuit-tracer"))
 
 from circuit_tracer.graph import prune_graph
 from circuit_tracer.utils.create_graph_files import create_graph_files
@@ -170,7 +174,8 @@ def visualize_graph(graph, save_path, feature_labels=None, open_in_browser=False
                 json_file_path = os.path.join(json_dir, f"{slug}.json")
                 print(f"[VIS] JSON file saved: {json_file_path}")
                 print(f"[VIS] To view in web server, run:")
-                print(f"      cd {os.path.join(_REPO_ROOT, 'circuit-tracer', 'circuit-tracer')}")
+                print(f"      cd os.path.join(ROOT_DIR, "circuit-tracer", "circuit-tracer")")
+                print(f"      export PATH=\"~/.conda/envs/ct-env/bin:$PATH\"")
                 print(f"      python -m circuit_tracer start-server --graph_file_dir {json_dir} --port 8041")
                 
                 return {

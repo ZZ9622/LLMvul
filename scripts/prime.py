@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 import os
 import sys
-
-# Repo root and circuit-tracer path (must be before circuit_tracer imports)
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(_REPO_ROOT, "circuit-tracer", "circuit-tracer"))
-sys.path.insert(0, _REPO_ROOT)
-
+# ── Repository root & output directory (auto-detected) ───────────────────────
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+OUTPUT_BASE = os.environ.get(
+    "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
+)
+# ── circuit-tracer: prefer installed package, fall back to local clone ────────
+_CT_PATH = os.path.join(ROOT_DIR, "circuit-tracer", "circuit-tracer")
+if _CT_PATH not in sys.path:
+    sys.path.insert(0, _CT_PATH)
 import json
 import re
 import torch
@@ -24,17 +28,44 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import queue
 from contextlib import nullcontext
 
-import config
-
 # === Time stamp & directories ===
 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-LOG_DIR = os.path.join(config.LOG_BASE, ts)
-PLOT_DIR = os.path.join(config.PLOT_BASE, ts)
+LOG_DIR = os.path.join(OUTPUT_BASE, "log", ts)
+PLOT_DIR = os.path.join(OUTPUT_BASE, "plots", ts)
 predictions_json_path = os.path.join(LOG_DIR, "all_predictions.json")
-config.ensure_output_dirs(LOG_DIR, PLOT_DIR)
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(PLOT_DIR, exist_ok=True)
 
-# === Paths & model (HuggingFace) ===
-MODEL_NAME = config.MODEL_NAME
+# === Paths & HuggingFace fallback ===
+MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
+DATASET_HF_ID = "Chun9622/LLMvul"
+
+def _ensure_data_jsonl():
+    """Return (vul_path, nonvul_path), downloading from HF if needed."""
+    import json as _json
+    _data_dir = os.path.join(ROOT_DIR, "data")
+    _vul = os.path.join(_data_dir, "primevul236.jsonl")
+    _nonvul = os.path.join(_data_dir, "primenonvul236.jsonl")
+    if os.path.exists(_vul) and os.path.exists(_nonvul):
+        return _vul, _nonvul
+    print("[INFO] Local data files not found – downloading from HuggingFace …")
+    from datasets import load_dataset as _lds  # type: ignore
+    ds = _lds(DATASET_HF_ID)
+    os.makedirs(_data_dir, exist_ok=True)
+    split = ds.get("vulnerable") or ds.get("train") or ds[list(ds.keys())[0]]
+    if "vulnerable" in ds and "non_vulnerable" in ds:
+        vul_recs, nonvul_recs = ds["vulnerable"], ds["non_vulnerable"]
+    else:
+        vul_recs   = [r for r in split if r.get("target") == 1]
+        nonvul_recs = [r for r in split if r.get("target") == 0]
+    for recs, fpath in [(vul_recs, _vul), (nonvul_recs, _nonvul)]:
+        with open(fpath, "w", encoding="utf-8") as _f:
+            for r in recs:
+                _f.write(_json.dumps(dict(r), ensure_ascii=False) + "\n")
+    print(f"[INFO] Data saved to {_data_dir}")
+    return _vul, _nonvul
+
+VUL_PATH, NONVUL_PATH = _ensure_data_jsonl()
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 8
 MAX_FEATURE_NODES = 200
@@ -112,20 +143,20 @@ class ReadWriteLock:
 
 model_lock = ReadWriteLock()
 
-# === Patch for model loading (transformer_lens expects base gemma name) ===
+# === Patch for model loading ===
 def patch_model_loading():
     import transformer_lens.loading_from_pretrained as loading
     original = loading.get_official_model_name
     loading.get_official_model_name = (
         lambda model_name: "google/gemma-2-2b"
-        if model_name == MODEL_NAME
+        if model_name == MODEL_PATH
         else original(model_name)
     )
 def patch_model_config_loading():
     import transformer_lens.loading_from_pretrained as loading
     original = loading.get_pretrained_model_config
     def patched(model_name, **kwargs):
-        if model_name == MODEL_NAME:
+        if model_name == MODEL_PATH:
             from transformers import AutoConfig
             return AutoConfig.from_pretrained(model_name)
         return original(model_name, **kwargs)
@@ -133,9 +164,9 @@ def patch_model_config_loading():
 patch_model_loading()
 patch_model_config_loading()
 
-# === Load model & tokenizer (from HuggingFace) ===
-print("[INFO] Loading tokenizer from HuggingFace...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+# === Load model & tokenizer ===
+print("[INFO] Loading tokenizer...")
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 print("[INFO] Tokenizer loaded.")
@@ -149,9 +180,9 @@ if torch.cuda.is_available():
     except Exception:
         pass
 
-print("[INFO] Loading ReplacementModel from HuggingFace...")
+print("[INFO] Loading ReplacementModel...")
 rm = ReplacementModel.from_pretrained(
-    MODEL_NAME,
+    MODEL_PATH,
     transcoder_set="gemma",
     device=DEVICE,
     torch_dtype=torch.float16 if DEVICE.startswith("cuda") else torch.float32
@@ -884,18 +915,8 @@ def plot_all_samples_l0_trends(vul_results, nonvul_results, out_path):
 
 # === Run analysis ===
 print("[START] Begin analysis...")
-# Load data: local jsonl if present, else HuggingFace dataset
-vul_path = os.path.join(config.DATA_DIR, "primevul236.jsonl")
-nonvul_path = os.path.join(config.DATA_DIR, "primenonvul236.jsonl")
-if os.path.isfile(vul_path) and os.path.isfile(nonvul_path):
-    vul_prompts = load_prompts(vul_path)
-    nonvul_prompts = load_prompts(nonvul_path)
-    print(f"[INFO] Loaded from local data: {len(vul_prompts)} vul, {len(nonvul_prompts)} nonvul")
-else:
-    demo_limit = os.environ.get("DEMO_LIMIT")
-    total_limit = int(demo_limit) if demo_limit and demo_limit.isdigit() else None
-    vul_prompts, nonvul_prompts = config.get_dataset_from_huggingface(total_limit=total_limit)
-    print(f"[INFO] Loaded from HuggingFace ({config.DATASET_NAME}): {len(vul_prompts)} vul, {len(nonvul_prompts)} nonvul")
+vul_prompts = load_prompts(VUL_PATH)
+nonvul_prompts = load_prompts(NONVUL_PATH)
 
 print(f"[INFO] Processing {len(vul_prompts)} VUL samples (optimized GPU utilization)")
 vul_results, vul_predictions = process_samples_with_attr_pool(vul_prompts, tag="VUL")

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Data files (large)
+data/*.jsonl
+data/*.json
+!data/README.md
+
+# Output / logs / plots
+out/
+logs/
+*.log
+
+# Circuit-tracer clone (installed separately)
+circuit-tracer/
+
+# Demo output
+demo/output/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
