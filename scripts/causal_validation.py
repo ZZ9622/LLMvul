@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-# ── Repository root & output directory (auto-detected) ───────────────────────
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           
 OUTPUT_BASE = os.environ.get(
     "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
 )
@@ -25,12 +24,7 @@ from circuit_tracer.replacement_model import ReplacementModel
 
 DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")
 
-# ── Check for tp_tn_samples.jsonl ────────────────────────────────────────────
-if not os.path.exists(DATA_PATH):
-    print(f"[ERROR] {DATA_PATH} not found.")
-    print("[INFO]  This file is produced by running: python scripts/prime.py")
-    print("[INFO]  Then copy TP/TN results from the output to data/tp_tn_samples.jsonl")
-    raise SystemExit(1)
+# please use the tp_tn_samples.jsonl which is from the dataset used in prime.py, to ensure the prompt format and samples are consistent with the main pipeline.
 
 NEURON_ANALYSIS_PATH = os.path.join(ROOT_DIR, "data", "neuron_analysis.json")
 MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
@@ -89,10 +83,8 @@ print(f"Device: {DEVICE}", flush=True)
 print(f"Data: {DATA_PATH}", flush=True)
 print(f"Neuron IDs: {NEURON_ANALYSIS_PATH}", flush=True)
 print("="*80, flush=True)
-print("\n[IMPORTANT] Using ALL TP/TN samples for accurate baseline", flush=True)
-print("[IMPORTANT] Prompt format matches prime.py for consistency", flush=True)
-print("[IMPORTANT] Using real Top-20 neuron IDs from neuron_analysis.json", flush=True)
-print("="*80, flush=True)
+
+# using all TP/TN samples for accurate baseline, since the dataset is not too large and we want to ensure the prompt format matches prime.py for consistency. Also using real Top-20 neuron IDs from neuron_analysis.json for more meaningful ablation results.
 
 def patch_model_loading():
     import transformer_lens.loading_from_pretrained as loading

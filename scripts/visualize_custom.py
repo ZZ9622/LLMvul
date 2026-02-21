@@ -2,9 +2,8 @@
 import torch
 import numpy as np
 import os
-# ── Repository root & output directory (auto-detected) ───────────────────────
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)          
 OUTPUT_BASE = os.environ.get(
     "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
 )

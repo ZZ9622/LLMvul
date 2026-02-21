@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-"""
-Attention Head Analysis for Vulnerability Detection
-"""
-
 import os
-# ── Repository root & output directory (auto-detected) ───────────────────────
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           
 OUTPUT_BASE = os.environ.get(
     "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
 )
@@ -29,12 +24,7 @@ from circuit_tracer.replacement_model import ReplacementModel
 
 DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")
 
-# ── Check for tp_tn_samples.jsonl ────────────────────────────────────────────
-if not os.path.exists(DATA_PATH):
-    print(f"[ERROR] {DATA_PATH} not found.")
-    print("[INFO]  This file is produced by running: python scripts/prime.py")
-    print("[INFO]  Then copy TP/TN results from the output to data/tp_tn_samples.jsonl")
-    raise SystemExit(1)
+# please use tp_tn_samples.jsonl which contains all TP/TN samples with CWE info, to analyze attention patterns in the same samples that were used for neuron analysis and causal validation, ensuring consistency across analyses and maximizing the use of available data for robust insights.
 
 MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -100,7 +90,6 @@ rm.eval()
 n_layers = rm.cfg.n_layers
 n_heads = rm.cfg.n_heads
 
-print(f"  Model: Gemma-2-2B")
 print(f"  Layers: {n_layers}")
 print(f"  Heads per layer: {n_heads}")
 print(f"  Total heads: {n_layers * n_heads}")
@@ -126,8 +115,6 @@ def load_tp_tn_samples(jsonl_path):
                     code = code[:2000]
                 
                 prompt = f"Code: {code}\n\nQuestion: Is this code safe or vulnerable?\nAnswer:"
-                
-                # Extract CWE information
                 cwe_list = data.get('cwe', [])
                 cwe_category = cwe_list[0] if cwe_list else 'Unknown'
                 
@@ -169,13 +156,6 @@ def self_entropy(attn_vec):
     return entropy
 
 def extract_attention_patterns(samples, sample_type):
-    """
-    Extract attention patterns from samples
-    
-    Returns:
-        attention_scores: shape (n_samples, n_layers, n_heads, seq_len, seq_len)
-        sequence_lengths: actual length of each sample
-    """
     print(f"\n[3/6] Extracting attention patterns from {sample_type} samples...")
     
     head_attentions = defaultdict(list)
@@ -318,17 +298,11 @@ results_path = os.path.join(LOG_DIR, "attention_head_importance.json")
 with open(results_path, 'w') as f:
     json.dump(head_importance, f, indent=2)
 print(f"\n  Results saved to: {results_path}")
-
-# Analysis of whether different CWE categories use different attention heads
 print(f"\n[4.5/6] Analyzing CWE-specific attention patterns...")
-
-# Group TP samples by CWE category
 cwe_groups = defaultdict(list)
 for sample in tp_samples:
     cwe = sample.get('cwe', 'Unknown')
     cwe_groups[cwe].append(sample)
-
-# Filter CWE categories with enough samples
 MIN_SAMPLES_PER_CWE = 5
 cwe_categories = {cwe: samples for cwe, samples in cwe_groups.items() 
                   if len(samples) >= MIN_SAMPLES_PER_CWE}
@@ -338,13 +312,11 @@ for cwe, samples in sorted(cwe_categories.items(), key=lambda x: len(x[1]), reve
     print(f"    {cwe}: {len(samples)} samples")
 
 if len(cwe_categories) >= 2:
-    # Extract attention patterns for each CWE category
     cwe_attentions = {}
     for cwe, samples in cwe_categories.items():
         print(f"\n  Extracting attention for {cwe} ({len(samples)} samples)...")
         cwe_attentions[cwe] = extract_attention_patterns(samples, cwe)
     
-    # Compute head importance for each CWE category
     cwe_head_importance = {}
     TOP_K_PER_CWE = 5
     
@@ -401,14 +373,12 @@ if len(cwe_categories) >= 2:
         
         head_scores.sort(key=lambda x: abs(x['importance']), reverse=True)
         cwe_head_importance[cwe] = head_scores[:TOP_K_PER_CWE]
-    
-    # Save CWE-specific results
+
     cwe_results_path = os.path.join(LOG_DIR, "cwe_attention_analysis.json")
     with open(cwe_results_path, 'w') as f:
         json.dump(cwe_head_importance, f, indent=2)
     print(f"\n  CWE-specific results saved to: {cwe_results_path}")
-    
-    # Generate CWE comparison heatmap
+
     print(f"\n  Generating CWE attention head comparison heatmap...")
     
     cwe_list = sorted(cwe_head_importance.keys())
@@ -418,8 +388,7 @@ if len(cwe_categories) >= 2:
         for head_info in cwe_head_importance[cwe]:
             head_idx = head_info['layer'] * n_heads + head_info['head']
             head_matrix[i, head_idx] = head_info['importance']
-    
-    # Select top heads across all CWEs for visualization
+
     head_importance_sum = np.sum(np.abs(head_matrix), axis=0)
     top_head_indices = np.argsort(head_importance_sum)[-30:]  # Top 30 heads
     
@@ -450,8 +419,7 @@ if len(cwe_categories) >= 2:
     plt.savefig(heatmap_path, dpi=150, bbox_inches='tight')
     plt.close()
     print(f"      Saved: {heatmap_path}")
-    
-    # Generate top heads per CWE bar chart
+
     print(f"\n  Generating per-CWE top attention heads chart...")
     
     n_cwes = len(cwe_list)
@@ -482,8 +450,7 @@ if len(cwe_categories) >= 2:
     plt.savefig(per_cwe_path, dpi=150, bbox_inches='tight')
     plt.close()
     print(f"      Saved: {per_cwe_path}")
-    
-    # Compute head overlap between CWE categories
+
     print(f"\n  Computing attention head overlap between CWE categories...")
     
     overlap_matrix = np.zeros((len(cwe_list), len(cwe_list)))
@@ -521,7 +488,6 @@ if len(cwe_categories) >= 2:
     plt.close()
     print(f"      Saved: {overlap_path}")
     
-    # Statistical summary
     print(f"\n  CWE-Specific Attention Analysis Summary:")
     print(f"  {'CWE':<15} {'Samples':<10} {'Top Head':<15} {'Importance':<12}")
     print("  " + "-"*60)
@@ -718,13 +684,6 @@ with open(summary_path, 'w') as f:
                 f"{head_info['mean_tn_max']:.4f} | {head_info.get('mean_tp_entropy', 0):.4f} | "
                 f"{head_info.get('mean_tn_entropy', 0):.4f} | _[See heatmap]_ |\n")
     
-    f.write("\n## Interpretation\n\n")
-    f.write("- **Positive Importance:** Head is more focused (higher max, lower entropy) in TP (vulnerable) cases\n")
-    f.write("- **Negative Importance:** Head is more focused in TN (safe) cases\n")
-    f.write("- **Higher absolute value:** More discriminative for vulnerability detection\n")
-    f.write("- **Max attention:** Measures how strongly the head focuses on key tokens\n")
-    f.write("- **Entropy:** Lower entropy = more selective attention pattern\n\n")
-    
     f.write("## Generated Files\n\n")
     f.write(f"- **Attention heatmaps:** `attention_rank{{1-{VISUALIZE_TOP_N}}}_L{{layer}}H{{head}}.png`\n")
     f.write(f"- **Importance ranking:** `attention_importance_ranking.png`\n")
@@ -758,12 +717,6 @@ with open(summary_path, 'w') as f:
             f.write(f"| {cwe} | {len(cwe_groups[cwe])} | "
                    f"L{top_head['layer']}H{top_head['head']} | "
                    f"{top_head['importance']:.6f} |\n")
-        
-        f.write("\n### Key Observations\n\n")
-        f.write("- Different CWE categories show varying attention head preferences\n")
-        f.write("- The heatmap reveals specialized attention patterns for vulnerability types\n")
-        f.write("- Head overlap analysis shows which CWEs share similar detection mechanisms\n")
-        f.write("- Lower overlap suggests distinct attention mechanisms for different vulnerability classes\n\n")
     
     f.write("## Usage\n\n")
     f.write("```bash\n")

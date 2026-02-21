@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""
-Example analysis script: Analyze vulnerability-specific circuits from prime3.py output.
-
-Usage:
-    python analyze_circuits.py <path_to_out.json>
-
-This script demonstrates how to:
-1. Load category analysis results
-2. Identify layer-specific activations per vulnerability type
-3. Perform statistical tests for category differences
-4. Generate publication-ready summaries
-"""
 
 import json
 import sys
@@ -18,20 +6,16 @@ import numpy as np
 from collections import defaultdict
 
 def load_results(json_path):
-    """Load analysis results from prime3.py output."""
     with open(json_path, 'r') as f:
         data = json.load(f)
     return data
 
 def find_peak_layers(category_avg_l0):
-    """Find the layer with maximum L0 activation for each category."""
     peak_info = {}
     
     for category, l0_dict in category_avg_l0.items():
         if not l0_dict:
             continue
-        
-        # Convert string keys to int for proper sorting
         layers_values = [(int(k), v) for k, v in l0_dict.items()]
         layers_values.sort(key=lambda x: x[1], reverse=True)
         
@@ -49,11 +33,6 @@ def find_peak_layers(category_avg_l0):
     return peak_info
 
 def compute_layer_variance(category_avg_l0, num_layers=26):
-    """
-    Compute variance of L0 values across categories for each layer.
-    High variance → layer is category-specific.
-    Low variance → layer is shared across categories.
-    """
     layer_variance = {}
     
     for layer_idx in range(num_layers):
@@ -67,7 +46,7 @@ def compute_layer_variance(category_avg_l0, num_layers=26):
         if len(values) > 1:
             variance = np.var(values)
             mean = np.mean(values)
-            cv = variance / mean if mean > 0 else 0  # Coefficient of variation
+            cv = variance / mean if mean > 0 else 0 
             layer_variance[layer_idx] = {
                 'variance': variance,
                 'mean': mean,
@@ -78,9 +57,7 @@ def compute_layer_variance(category_avg_l0, num_layers=26):
     return layer_variance
 
 def identify_specialized_layers(layer_variance, threshold_percentile=75):
-    """
-    Identify layers that show specialization (high variance across categories).
-    """
+
     variances = [info['variance'] for info in layer_variance.values()]
     threshold = np.percentile(variances, threshold_percentile)
     
@@ -90,10 +67,7 @@ def identify_specialized_layers(layer_variance, threshold_percentile=75):
     return specialized, threshold
 
 def compare_categories_pairwise(vul_samples, category1, category2):
-    """
-    Compare L0 patterns between two categories across all layers.
-    Returns layers where differences are substantial.
-    """
+
     cat1_samples = [s for s in vul_samples if s.get('cwe', '') and 
                     categorize_cwe(s.get('cwe', '')) == category1]
     cat2_samples = [s for s in vul_samples if s.get('cwe', '') and 
@@ -101,8 +75,7 @@ def compare_categories_pairwise(vul_samples, category1, category2):
     
     if not cat1_samples or not cat2_samples:
         return None
-    
-    # Collect all layers
+
     all_layers = set()
     for s in cat1_samples + cat2_samples:
         all_layers.update(s.get('l0_per_layer', {}).keys())
@@ -173,8 +146,7 @@ def main():
     print(f"[INFO] Loading results from: {json_path}")
     
     data = load_results(json_path)
-    
-    # Extract vulnerability category data
+
     vuln_categories = data.get('vulnerability_categories', {})
     category_counts = vuln_categories.get('category_counts', {})
     category_avg_l0 = vuln_categories.get('category_avg_l0', {})
@@ -184,7 +156,6 @@ def main():
     print("VULNERABILITY-SPECIFIC CIRCUIT ANALYSIS")
     print("="*80)
     
-    # 1. Peak layer analysis
     print("\n[1] PEAK ACTIVATION LAYERS PER CATEGORY")
     print("-" * 80)
     peak_info = find_peak_layers(category_avg_l0)
@@ -198,7 +169,6 @@ def main():
         top3_str = ", ".join([f"L{layer}({val:.1f})" for layer, val in info['top3_layers']])
         print(top3_str)
     
-    # 2. Layer variance analysis
     print("\n\n[2] LAYER SPECIALIZATION ANALYSIS")
     print("-" * 80)
     layer_variance = compute_layer_variance(category_avg_l0)
@@ -209,8 +179,7 @@ def main():
         info = specialized[layer]
         print(f"  Layer {layer:2d}: variance={info['variance']:6.2f}, "
               f"mean={info['mean']:5.2f}, CV={info['cv']:.3f}")
-    
-    # Identify shared vs specialized regions
+
     early_layers = [l for l in specialized.keys() if l < 9]
     middle_layers = [l for l in specialized.keys() if 9 <= l < 17]
     late_layers = [l for l in specialized.keys() if l >= 17]
@@ -223,8 +192,7 @@ def main():
     # 3. Pairwise category comparison
     print("\n\n[3] PAIRWISE CATEGORY COMPARISONS")
     print("-" * 80)
-    
-    # Compare Memory Safety vs Injection (if both exist)
+
     if 'Memory Safety' in category_avg_l0 and 'Injection' in category_avg_l0:
         print("\nMemory Safety vs Injection:")
         diffs = compare_categories_pairwise(vul_samples, 'Memory Safety', 'Injection')
@@ -235,8 +203,7 @@ def main():
                 print(f"  Layer {layer:2s}: Memory={info['cat1_mean']:5.2f}, "
                       f"Injection={info['cat2_mean']:5.2f}, "
                       f"diff={info['abs_diff']:5.2f} ({info['relative_diff']*100:.1f}%)")
-    
-    # Compare Memory Safety vs Logic/Input Validation
+
     if 'Memory Safety' in category_avg_l0 and 'Logic/Input Validation' in category_avg_l0:
         print("\nMemory Safety vs Logic/Input Validation:")
         diffs = compare_categories_pairwise(vul_samples, 'Memory Safety', 'Logic/Input Validation')
@@ -246,8 +213,7 @@ def main():
                 print(f"  Layer {layer:2s}: Memory={info['cat1_mean']:5.2f}, "
                       f"Logic={info['cat2_mean']:5.2f}, "
                       f"diff={info['abs_diff']:5.2f} ({info['relative_diff']*100:.1f}%)")
-    
-    # 4. Summary for publication
+
     print("\n\n[4] PUBLICATION SUMMARY")
     print("-" * 80)
     
@@ -255,7 +221,7 @@ def main():
     print(f"\nDataset: {total_vul} vulnerable samples across {len(category_counts)} categories")
     
     print("\nKey findings:")
-    # Find early-activating category
+
     early_peaks = {cat: info['peak_layer'] for cat, info in peak_info.items() 
                    if info['peak_layer'] < 9}
     late_peaks = {cat: info['peak_layer'] for cat, info in peak_info.items() 
@@ -271,7 +237,6 @@ def main():
         print(f"- {late_cat[0]} shows latest peak activation (Layer {late_cat[1]}), "
               f"suggesting semantic reasoning requirements")
     
-    # Category with highest overall activation
     total_l0_per_cat = {cat: sum(l0_dict.values()) for cat, l0_dict in category_avg_l0.items()}
     if total_l0_per_cat:
         max_cat = max(total_l0_per_cat.items(), key=lambda x: x[1])

@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
 import sys
-# ── Repository root & output directory (auto-detected) ───────────────────────
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           
 OUTPUT_BASE = os.environ.get(
     "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
 )
-# ── circuit-tracer path ───────────────────────────────────────────────────────
 _CT_PATH = os.path.join(ROOT_DIR, "circuit-tracer", "circuit-tracer")
 if _CT_PATH not in sys.path:
     sys.path.insert(0, _CT_PATH)

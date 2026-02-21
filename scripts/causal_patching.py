@@ -27,19 +27,13 @@ import gc
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "circuit-tracer", "circuit-tracer"))
 from circuit_tracer.replacement_model import ReplacementModel
 
-SAFE_DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")  # TN 样本
+SAFE_DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")  
 
-# ── Check for tp_tn_samples.jsonl ────────────────────────────────────────────
-if not os.path.exists(SAFE_DATA_PATH):
-    print(f"[ERROR] {SAFE_DATA_PATH} not found.")
-    print("[INFO]  This file is produced by running: python scripts/prime.py")
-    print("[INFO]  Then copy TP/TN results from the output to data/tp_tn_samples.jsonl")
-    raise SystemExit(1)
+# please use the tp_tn_samples.jsonl which is from the dataset used in prime.py, to ensure the prompt format and samples are consistent with the main pipeline.
 
-VUL_DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")   # TP 样本
+VUL_DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")   
 MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
-
 NUM_SAFE_SAMPLES = None
 NUM_VUL_SAMPLES = None
 MAX_SEQ_LENGTH = 512
@@ -108,18 +102,6 @@ print(f"  Layers: {n_layers}")
 print(f"  Hidden size (d_model): {d_model}")
 
 def extract_label(text):
-    """
-    Extract vul/nonvul label from model output (from prime.py).
-    
-    Enhanced to better handle code continuation and truncated outputs.
-    
-    Priority strategy:
-    0. Find "Answer:" and extract text after it
-    1. Look for "safe" or "vulnerable" keywords anywhere in output
-    2. Check for code-followed-by-answer pattern
-    3. Detect question echo patterns
-    4. Keyword analysis with lower threshold
-    """
     import re
     
     if not text or len(text.strip()) == 0:
@@ -300,12 +282,9 @@ def load_samples(jsonl_path, target_type, max_samples=None):
 
 safe_samples = load_samples(SAFE_DATA_PATH, 'TN', NUM_SAFE_SAMPLES)
 print(f"  Loaded {len(safe_samples)} TN (safe) samples")
-
-# 计算每层的平均残差流向量
-mean_safe_cache = {}  # {layer: mean_vector}
-
+mean_safe_cache = {}  
 print(f"  Extracting residual stream activations...")
-all_residuals = defaultdict(list)  # {layer: [vectors]}
+all_residuals = defaultdict(list)  
 
 for i, sample in enumerate(safe_samples):
     if (i + 1) % 10 == 0:
@@ -327,21 +306,15 @@ for i, sample in enumerate(safe_samples):
         with torch.no_grad():
             _, cache = rm.run_with_cache(input_ids, return_type=None)
         
-        # 提取每层最后一个 token 的残差流
         for layer in range(n_layers):
-            # Cache key: blocks.{layer}.hook_resid_post
             resid_key = f"blocks.{layer}.hook_resid_post"
             
             if resid_key in cache:
-                # shape: (batch=1, seq_len, d_model)
                 resid = cache[resid_key]
-                
-                # 取最后一个 token 的向量
                 last_token_vec = resid[0, seq_len-1, :].detach().cpu().float()
                 
                 all_residuals[layer].append(last_token_vec)
         
-        # 清理
         del cache, inputs
         if i % 10 == 0:
             gc.collect()
@@ -355,13 +328,12 @@ for i, sample in enumerate(safe_samples):
 print(f"  Computing mean vectors for each layer...")
 for layer in range(n_layers):
     if layer in all_residuals and len(all_residuals[layer]) > 0:
-        # Stack and average
-        vectors = torch.stack(all_residuals[layer])  # (n_samples, d_model)
-        mean_vec = torch.mean(vectors, dim=0)  # (d_model,)
+        vectors = torch.stack(all_residuals[layer])  
+        mean_vec = torch.mean(vectors, dim=0)  
         mean_safe_cache[layer] = mean_vec
         print(f"    Layer {layer}: averaged {len(all_residuals[layer])} samples")
 
-print(f"  ✓ Mean Safe Cache computed for {len(mean_safe_cache)} layers")
+print(f"  Mean Safe Cache computed for {len(mean_safe_cache)} layers")
 
 print(f"\n[3/6] Step 2: Filtering baseline vulnerable samples...")
 
@@ -422,7 +394,6 @@ print(f"  ✓ Selected {len(baseline_vul_samples)} vulnerable samples (baseline:
 
 print(f"\n[4/6] Step 3: Layer-by-layer Patching Sweep...")
 
-# 存储结果: {layer: [sample_results]}
 patching_results = defaultdict(list)
 
 for target_layer in range(n_layers):
@@ -535,7 +506,6 @@ for layer, rate in sorted_layers:
 
 print(f"\n[6/6] Step 5: Generating visualizations...")
 
-# 1. Flip Rate Curve
 fig, ax = plt.subplots(figsize=(14, 6))
 
 layers = sorted(flip_rates.keys())

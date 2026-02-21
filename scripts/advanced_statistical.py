@@ -9,9 +9,8 @@ from transformers import AutoTokenizer
 from collections import defaultdict
 import sys
 import os
-# ── Repository root & output directory (auto-detected) ───────────────────────
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)           # LLMvul/
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)          
 OUTPUT_BASE = os.environ.get(
     "LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out")
 )
@@ -19,12 +18,7 @@ OUTPUT_BASE = os.environ.get(
 MODEL_PATH = "Chun9622/llmvul-finetuned-gemma" 
 DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")
 
-# ── Check for tp_tn_samples.jsonl ────────────────────────────────────────────
-if not os.path.exists(DATA_PATH):
-    print(f"[ERROR] {DATA_PATH} not found.")
-    print("[INFO]  This file is produced by running: python scripts/prime.py")
-    print("[INFO]  Then copy TP/TN results from the output to data/tp_tn_samples.jsonl")
-    raise SystemExit(1)
+# please use tp_tn_samples.jsonl from the dataset prepared by running prime.py, which contains a balanced set of true positive (vulnerable) and true negative (safe) samples with their vulnerability types. This file is essential for the analysis in this script.
 
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 NUM_SAMPLES = None
