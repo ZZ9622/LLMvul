@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import sys
 import numpy as np
 from collections import defaultdict
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR    = os.path.dirname(_SCRIPT_DIR)
+OUTPUT_BASE = os.environ.get("LLMVUL_OUTPUT_DIR", os.path.join(ROOT_DIR, "out"))
 
 def load_results(json_path):
     with open(json_path, 'r') as f:
@@ -153,6 +161,39 @@ def main():
     category_counts = vuln_categories.get('category_counts', {})
     category_avg_l0 = vuln_categories.get('category_avg_l0', {})
     vul_samples = data.get('vul_samples', [])
+
+    # ── Build category_avg_l0 from vul_samples + primevul JSONL if missing ──
+    if not category_avg_l0 and vul_samples:
+        vul_jsonl = os.path.join(ROOT_DIR, "data", "primevul236.jsonl")
+        idx_to_cwe = {}
+        if os.path.exists(vul_jsonl):
+            with open(vul_jsonl, encoding='utf-8') as _f:
+                for line in _f:
+                    rec = json.loads(line)
+                    idx_to_cwe[str(rec.get('idx', ''))] = rec.get('cwe', '')
+        cat_l0_sums  = defaultdict(lambda: defaultdict(float))
+        cat_counts_map = defaultdict(int)
+        for s in vul_samples:
+            cwe  = idx_to_cwe.get(str(s.get('idx', '')), '')
+            cat  = categorize_cwe(cwe)
+            l0   = s.get('l0_per_layer', {})
+            if not l0:
+                continue
+            for layer, val in l0.items():
+                cat_l0_sums[cat][str(layer)] += float(val)
+            cat_counts_map[cat] += 1
+        # Average
+        for cat in cat_l0_sums:
+            n = max(cat_counts_map[cat], 1)
+            category_avg_l0[cat] = {k: v / n for k, v in cat_l0_sums[cat].items()}
+        category_counts = dict(cat_counts_map)
+        print(f"[INFO] Built category_avg_l0 for {len(category_avg_l0)} categories from {len(vul_samples)} vul_samples")
+
+    # ── Output directory for plots ───────────────────────────────────────────
+    from datetime import datetime as _dt
+    _ts = _dt.now().strftime("%Y%m%d_%H%M%S")
+    PLOT_DIR = os.path.join(OUTPUT_BASE, "plots", f"analyze_circuits_{_ts}")
+    os.makedirs(PLOT_DIR, exist_ok=True)
     
     print("\n" + "="*80)
     print("VULNERABILITY-SPECIFIC CIRCUIT ANALYSIS")
@@ -245,8 +286,47 @@ def main():
         print(f"- {max_cat[0]} has highest total L0 ({max_cat[1]:.1f}), "
               f"indicating most distributed circuit usage")
     
+    # ── Generate and save plots ─────────────────────────────────────────────
+    if category_avg_l0:
+        # Plot 1: avg L0 per layer per category
+        fig, ax = plt.subplots(figsize=(14, 6))
+        n_layers = 26
+        layers = list(range(n_layers))
+        for cat, l0_dict in sorted(category_avg_l0.items()):
+            vals = [l0_dict.get(str(l), 0) for l in layers]
+            ax.plot(layers, vals, marker='o', markersize=3, label=f"{cat} (n={category_counts.get(cat,0)})")
+        ax.set_xlabel('Layer')
+        ax.set_ylabel('Avg L0 (attributed tokens)')
+        ax.set_title('Average L0 Attribution per Layer by Vulnerability Category')
+        ax.legend(fontsize=7, loc='upper right')
+        ax.grid(True, alpha=0.3)
+        p1 = os.path.join(PLOT_DIR, 'category_avg_l0_per_layer.png')
+        fig.tight_layout()
+        fig.savefig(p1, dpi=150)
+        plt.close(fig)
+        print(f"[SAVED] {p1}")
+
+        # Plot 2: total L0 per category (bar chart)
+        total_l0 = {cat: sum(l0_dict.values()) for cat, l0_dict in category_avg_l0.items()}
+        cats_sorted = sorted(total_l0, key=lambda c: -total_l0[c])
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.bar(range(len(cats_sorted)), [total_l0[c] for c in cats_sorted], color='steelblue')
+        ax.set_xticks(range(len(cats_sorted)))
+        ax.set_xticklabels(cats_sorted, rotation=30, ha='right', fontsize=9)
+        ax.set_ylabel('Total avg L0')
+        ax.set_title('Total Circuit Usage (avg L0) per Vulnerability Category')
+        ax.grid(True, axis='y', alpha=0.3)
+        p2 = os.path.join(PLOT_DIR, 'category_total_l0.png')
+        fig.tight_layout()
+        fig.savefig(p2, dpi=150)
+        plt.close(fig)
+        print(f"[SAVED] {p2}")
+    else:
+        print("[WARN] No category_avg_l0 data – plots skipped.")
+
     print("\n" + "="*80)
     print("[COMPLETE] Circuit analysis finished")
+    print(f"[PLOTS]    {PLOT_DIR}")
     print("="*80)
 
 if __name__ == "__main__":

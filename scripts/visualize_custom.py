@@ -153,6 +153,27 @@ def visualize_graph(graph, save_path, feature_labels=None, open_in_browser=False
                 print(f"[WARN] Circuit diagram generation failed: {e}")
                 import traceback
                 traceback.print_exc()
+        else:
+            # Matplotlib fallback: bar chart of active nodes per layer
+            try:
+                import matplotlib
+                matplotlib.use('Agg')
+                import matplotlib.pyplot as plt
+                png_path = base_path + ".png"
+                layers   = sorted(layer_distribution.keys())
+                counts   = [layer_distribution[l] for l in layers]
+                fig, ax  = plt.subplots(figsize=(10, 4))
+                ax.bar(layers, counts, color='steelblue', edgecolor='navy')
+                ax.set_xlabel('Layer')
+                ax.set_ylabel('Active feature nodes')
+                ax.set_title(f'Circuit – Active Feature Nodes per Layer\n{os.path.basename(base_path)}')
+                ax.grid(True, axis='y', alpha=0.3)
+                fig.tight_layout()
+                fig.savefig(png_path, dpi=150)
+                plt.close(fig)
+                print(f"[VIS] Fallback PNG saved: {png_path}")
+            except Exception as _e:
+                print(f"[WARN] Matplotlib fallback also failed: {_e}")
         
         if save_json:
             slug = os.path.basename(base_path)
