@@ -30,8 +30,8 @@ from circuit_tracer.replacement_model import ReplacementModel
 SAFE_DATA_PATH = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")  # TN 样本
 
 # ── Check for tp_tn_samples.jsonl ────────────────────────────────────────────
-if not os.path.exists(DATA_PATH):
-    print(f"[ERROR] {DATA_PATH} not found.")
+if not os.path.exists(SAFE_DATA_PATH):
+    print(f"[ERROR] {SAFE_DATA_PATH} not found.")
     print("[INFO]  This file is produced by running: python scripts/prime.py")
     print("[INFO]  Then copy TP/TN results from the output to data/tp_tn_samples.jsonl")
     raise SystemExit(1)
