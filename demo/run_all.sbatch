@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=llmvul_all
-#SBATCH --output=logs/slurm_%j_%x.out
-#SBATCH --error=logs/slurm_%j_%x.err
+#SBATCH --output=slurm_%j_%x.out
+#SBATCH --error=slurm_%j_%x.err
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -9,6 +9,8 @@
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:1
 # ── Adjust the following two lines for your cluster ──────────────────────────
+#SBATCH --account=lu2025-2-37
+#SBATCH --partition=gpua100i
 ##SBATCH --partition=gpu
 ##SBATCH --account=your_account
 # ─────────────────────────────────────────────────────────────────────────────
@@ -34,11 +36,13 @@
 #   • Set REPO_ROOT if you submit from a different working directory.
 # ============================================================================
 
-set -euo pipefail
+set -uo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 CONDA_ENV="ct-env"          # name of your conda environment
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# SLURM_SUBMIT_DIR is the directory from which sbatch was called (repo root).
+# Do NOT use BASH_SOURCE here – Slurm copies the script to its spool dir.
+REPO_ROOT="${SLURM_SUBMIT_DIR}"
 SCRIPTS_DIR="${REPO_ROOT}/scripts"
 DATA_DIR="${REPO_ROOT}/data"
 OUT_DIR="${REPO_ROOT}/out"
@@ -46,14 +50,27 @@ LOG_DIR="${REPO_ROOT}/logs"
 
 mkdir -p "${LOG_DIR}" "${OUT_DIR}" "${DATA_DIR}"
 
-# ── Activate environment ──────────────────────────────────────────────────────
-if command -v conda &>/dev/null; then
-    source "$(conda info --base)/etc/profile.d/conda.sh"
-    conda activate "${CONDA_ENV}" || true
-elif [ -f "${REPO_ROOT}/.venv/bin/activate" ]; then
-    source "${REPO_ROOT}/.venv/bin/activate"
+echo "[SLURM] Job ID     : ${SLURM_JOB_ID:-unknown}"
+echo "[SLURM] Submit dir : ${SLURM_SUBMIT_DIR:-$(pwd)}"
+echo "[SLURM] Output file: ${SLURM_SUBMIT_DIR:-$(pwd)}/slurm_${SLURM_JOB_ID:-0}_${SLURM_JOB_NAME:-llmvul_all}.out"
+
+# ── Python interpreter ────────────────────────────────────────────────────────
+# Use ct-env directly (avoid conda init issues inside Slurm nodes).
+# Priority: ct-env absolute path → module Anaconda3 → system python
+CT_ENV_PYTHON="/home/chun7871/.conda/envs/ct-env/bin/python"
+
+if [ -x "${CT_ENV_PYTHON}" ]; then
+    PYTHON="${CT_ENV_PYTHON}"
+    echo "[ENV] Using ct-env: ${PYTHON}"
+elif module load Anaconda3 2>/dev/null && conda run -n ct-env python --version &>/dev/null; then
+    PYTHON="conda run -n ct-env python"
+    echo "[ENV] Using conda run ct-env"
+else
+    PYTHON="python3"
+    echo "[WARN] ct-env not found, using system python3 (may lack packages)"
 fi
 
+export LLMVUL_CT_ENV_PYTHON="${CT_ENV_PYTHON}"
 export LLMVUL_OUTPUT_DIR="${OUT_DIR}"
 
 echo "============================================================"
@@ -75,7 +92,7 @@ run_step() {
     echo " Script : ${script}"
     echo " Started: $(date)"
     echo "──────────────────────────────────────────────────────────"
-    python "${SCRIPTS_DIR}/${script}" "$@"
+    ${PYTHON} "${SCRIPTS_DIR}/${script}" "$@"
     local rc=$?
     if [ ${rc} -eq 0 ]; then
         echo " [OK] Step ${step_num} finished at $(date)"
