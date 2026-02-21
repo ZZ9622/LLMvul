@@ -35,12 +35,12 @@ Fine-tuned Gemma for vulnerability detection:
 
 ## Data
 
-Under `data/`:
-
-- `primevul236.jsonl` – vulnerable samples (JSONL: `func`, `target`, `idx`, etc.)
-- `primenonvul236.jsonl` – non-vulnerable samples
-- `tp_tn_samples.jsonl` – TP/TN samples (attention & causal scripts)
-- `neuron_analysis.json` – top neuron IDs per layer (causal validation)
+- **HuggingFace dataset**: [Chun9622/LLMvul](https://huggingface.co/datasets/Chun9622/LLMvul) – loaded automatically by scripts when local files are absent.
+- Optional local `data/` (overrides HF when present):
+  - `primevul236.jsonl` – vulnerable samples (JSONL: `func`, `target`, `idx`, etc.)
+  - `primenonvul236.jsonl` – non-vulnerable samples
+  - `tp_tn_samples.jsonl` – TP/TN samples (for attention & causal scripts; can be produced from prime output)
+  - `neuron_analysis.json` – top neuron IDs per layer (causal validation)
 
 Schema: `data/README.md`.
 
@@ -74,6 +74,26 @@ python scripts/main.py circuitplot
 ```
 
 You can also run scripts directly, e.g. `python scripts/prime.py`. Env vars: `PRED_BATCH_SIZE`, `MAX_NEW_TOKENS`, `MAX_INPUT_TOKENS`, `LOG_EVERY`.
+
+### Demo (reviewers)
+
+Quick run on the first 5 samples from the HuggingFace dataset:
+
+```bash
+python demo/demo.py
+```
+
+Output appears under `demo/output/`. Model and dataset are downloaded from HuggingFace on first run.
+
+### HPC (run all scripts)
+
+On a Slurm cluster, from repo root:
+
+```bash
+sbatch demo/run_all.sbatch
+```
+
+Adjust `#SBATCH` partition/account in `demo/run_all.sbatch` for your cluster. Downstream scripts (attention, causal_*) expect `data/tp_tn_samples.jsonl`; produce it from prime output or place it in `data/` if you have it.
 
 ## Project layout
 
