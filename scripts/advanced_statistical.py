@@ -59,17 +59,18 @@ def get_l2_norms(model, tokenizer, samples, vuln_types=None):
         inputs = tokenizer(prompt, return_tensors='pt').to(DEVICE)
         with torch.no_grad():
             _, cache = model.run_with_cache(inputs['input_ids'], return_type=None)
-        
+
         for layer in range(model.cfg.n_layers):
             act = cache[f"blocks.{layer}.hook_resid_post"]
-            vec = act[0, -1, :] 
-            norm = torch.norm(vec, p=2).item() 
+            vec = act[0, -1, :]
+            norm = torch.norm(vec, p=2).item()
             layer_norms[layer].append(norm)
-            
+
             if vuln_type and vuln_types:
                 type_layer_norms[vuln_type][layer].append(norm)
-            
-    return layer_norms, type_layer_norms
+
+        del cache
+        torch.cuda.empty_cache()
 
 def cohens_d(x, y):
     nx = len(x)

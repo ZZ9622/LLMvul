@@ -59,6 +59,8 @@ def compute_layer_variance(category_avg_l0, num_layers=26):
 def identify_specialized_layers(layer_variance, threshold_percentile=75):
 
     variances = [info['variance'] for info in layer_variance.values()]
+    if not variances:
+        return {}, 0.0
     threshold = np.percentile(variances, threshold_percentile)
     
     specialized = {layer: info for layer, info in layer_variance.items() 
