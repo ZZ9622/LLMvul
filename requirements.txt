@@ -9,6 +9,7 @@ sentencepiece>=0.1.99
 scipy>=1.10.0
 statsmodels>=0.14.0
 networkx>=3.0
+datasets>=2.14.0
 
 # circuit-tracer (not on PyPI): install from source after cloning:
 #   pip install -e circuit-tracer/circuit-tracer
