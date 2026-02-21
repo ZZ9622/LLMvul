@@ -41,23 +41,44 @@ MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
 DATASET_HF_ID = "Chun9622/LLMvul"
 
 def _ensure_data_jsonl():
-    """Return (vul_path, nonvul_path), downloading from HF if needed."""
+    """Return (vul_path, nonvul_path), searching local dirs then downloading from HF."""
     import json as _json
     _data_dir = os.path.join(ROOT_DIR, "data")
-    _vul = os.path.join(_data_dir, "primevul236.jsonl")
+    _vul   = os.path.join(_data_dir, "primevul236.jsonl")
     _nonvul = os.path.join(_data_dir, "primenonvul236.jsonl")
     if os.path.exists(_vul) and os.path.exists(_nonvul):
         return _vul, _nonvul
+
+    # Fallback: look in sibling data/ directory (original workspace layout)
+    _sibling = os.path.join(os.path.dirname(ROOT_DIR), "data")
+    _svul   = os.path.join(_sibling, "primevul236.jsonl")
+    _snonvul = os.path.join(_sibling, "primenonvul236.jsonl")
+    if os.path.exists(_svul) and os.path.exists(_snonvul):
+        print(f"[INFO] Using data files from sibling dir: {_sibling}")
+        os.makedirs(_data_dir, exist_ok=True)
+        import shutil as _sh
+        _sh.copy2(_svul,   _vul)
+        _sh.copy2(_snonvul, _nonvul)
+        return _vul, _nonvul
+
+    # Last resort: download per-file from HuggingFace (avoids schema-mismatch error)
     print("[INFO] Local data files not found – downloading from HuggingFace …")
     from datasets import load_dataset as _lds  # type: ignore
-    ds = _lds(DATASET_HF_ID)
     os.makedirs(_data_dir, exist_ok=True)
-    split = ds.get("vulnerable") or ds.get("train") or ds[list(ds.keys())[0]]
-    if "vulnerable" in ds and "non_vulnerable" in ds:
-        vul_recs, nonvul_recs = ds["vulnerable"], ds["non_vulnerable"]
-    else:
-        vul_recs   = [r for r in split if r.get("target") == 1]
-        nonvul_recs = [r for r in split if r.get("target") == 0]
+    try:
+        ds_vul   = _lds("json",
+                        data_files=f"hf://datasets/{DATASET_HF_ID}/primevul236.jsonl",
+                        split="train")
+        ds_nonvul = _lds("json",
+                         data_files=f"hf://datasets/{DATASET_HF_ID}/primenonvul236.jsonl",
+                         split="train")
+        vul_recs, nonvul_recs = list(ds_vul), list(ds_nonvul)
+    except Exception as _e:
+        print(f"[WARN] Per-file HF download failed ({_e}); retrying with full dataset …")
+        ds = _lds(DATASET_HF_ID, ignore_verifications=True)
+        _split = ds.get("train") or ds[list(ds.keys())[0]]
+        vul_recs   = [r for r in _split if r.get("target") == 1]
+        nonvul_recs = [r for r in _split if r.get("target") == 0]
     for recs, fpath in [(vul_recs, _vul), (nonvul_recs, _nonvul)]:
         with open(fpath, "w", encoding="utf-8") as _f:
             for r in recs:

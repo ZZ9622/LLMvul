@@ -174,7 +174,7 @@ def visualize_graph(graph, save_path, feature_labels=None, open_in_browser=False
                 json_file_path = os.path.join(json_dir, f"{slug}.json")
                 print(f"[VIS] JSON file saved: {json_file_path}")
                 print(f"[VIS] To view in web server, run:")
-                print(f"      cd os.path.join(ROOT_DIR, "circuit-tracer", "circuit-tracer")")
+                print(f"      cd {os.path.join(ROOT_DIR, 'circuit-tracer', 'circuit-tracer')}")
                 print(f"      export PATH=\"~/.conda/envs/ct-env/bin:$PATH\"")
                 print(f"      python -m circuit_tracer start-server --graph_file_dir {json_dir} --port 8041")
                 
