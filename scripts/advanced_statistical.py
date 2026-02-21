@@ -72,6 +72,8 @@ def get_l2_norms(model, tokenizer, samples, vuln_types=None):
         del cache
         torch.cuda.empty_cache()
 
+    return layer_norms, type_layer_norms
+
 def cohens_d(x, y):
     nx = len(x)
     ny = len(y)
