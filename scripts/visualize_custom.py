@@ -154,26 +154,37 @@ def visualize_graph(graph, save_path, feature_labels=None, open_in_browser=False
                 import traceback
                 traceback.print_exc()
         else:
-            # Matplotlib fallback: bar chart of active nodes per layer
+            # PNG fallback: try draw_circuit_from_json first, then bar chart
+            _drew_circles = False
             try:
-                import matplotlib
-                matplotlib.use('Agg')
-                import matplotlib.pyplot as plt
-                png_path = base_path + ".png"
-                layers   = sorted(layer_distribution.keys())
-                counts   = [layer_distribution[l] for l in layers]
-                fig, ax  = plt.subplots(figsize=(10, 4))
-                ax.bar(layers, counts, color='steelblue', edgecolor='navy')
-                ax.set_xlabel('Layer')
-                ax.set_ylabel('Active feature nodes')
-                ax.set_title(f'Circuit – Active Feature Nodes per Layer\n{os.path.basename(base_path)}')
-                ax.grid(True, axis='y', alpha=0.3)
-                fig.tight_layout()
-                fig.savefig(png_path, dpi=150)
-                plt.close(fig)
-                print(f"[VIS] Fallback PNG saved: {png_path}")
-            except Exception as _e:
-                print(f"[WARN] Matplotlib fallback also failed: {_e}")
+                from draw_circuit_from_json import draw_circuit as _draw_circuit
+                _circles_png = base_path + "_circles.png"
+                # We don't have the JSON yet at this point; will be drawn after JSON is saved
+                print(f"[VIS] draw_circuit_from_json available – circles PNG will be drawn after JSON is saved.")
+                _drew_circles = True   # flag: draw after JSON step
+            except ImportError:
+                pass
+
+            if not _drew_circles:
+                try:
+                    import matplotlib
+                    matplotlib.use('Agg')
+                    import matplotlib.pyplot as plt
+                    png_path = base_path + ".png"
+                    layers   = sorted(layer_distribution.keys())
+                    counts   = [layer_distribution[l] for l in layers]
+                    fig, ax  = plt.subplots(figsize=(10, 4))
+                    ax.bar(layers, counts, color='steelblue', edgecolor='navy')
+                    ax.set_xlabel('Layer')
+                    ax.set_ylabel('Active feature nodes')
+                    ax.set_title(f'Circuit – Active Feature Nodes per Layer\n{os.path.basename(base_path)}')
+                    ax.grid(True, axis='y', alpha=0.3)
+                    fig.tight_layout()
+                    fig.savefig(png_path, dpi=150)
+                    plt.close(fig)
+                    print(f"[VIS] Fallback bar-chart PNG saved: {png_path}")
+                except Exception as _e:
+                    print(f"[WARN] Matplotlib fallback also failed: {_e}")
         
         if save_json:
             slug = os.path.basename(base_path)
@@ -193,6 +204,16 @@ def visualize_graph(graph, save_path, feature_labels=None, open_in_browser=False
                 )
                 json_file_path = os.path.join(json_dir, f"{slug}.json")
                 print(f"[VIS] JSON file saved: {json_file_path}")
+
+                # Draw circles-based PNG from the JSON
+                try:
+                    from draw_circuit_from_json import draw_circuit as _draw_circuit
+                    _circles_out = os.path.join(json_dir, slug + "_circles.png")
+                    _draw_circuit(json_file_path, out_png=_circles_out)
+                    print(f"[VIS] Circles PNG saved: {_circles_out}")
+                except Exception as _ce:
+                    print(f"[WARN] Circles PNG generation failed: {_ce}")
+
                 print(f"[VIS] To view in web server, run:")
                 print(f"      cd {os.path.join(ROOT_DIR, 'circuit-tracer', 'circuit-tracer')}")
                 print(f"      export PATH=\"~/.conda/envs/ct-env/bin:$PATH\"")
