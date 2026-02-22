@@ -26,13 +26,7 @@ Fine-tuned Gemma for vulnerability detection:
 
 ## Data
 
-- **HuggingFace dataset**: [Chun9622/LLMvul](https://huggingface.co/datasets/Chun9622/LLMvul) – loaded automatically by scripts when local files are absent.
-- Optional local `data/` (overrides HF when present):
-  - `primevul236.jsonl` – vulnerable samples (JSONL: `func`, `target`, `idx`, etc.)
-  - `primenonvul236.jsonl` – non-vulnerable samples
-  - `tp_tn_samples.jsonl` – TP/TN samples (for attention & causal scripts; can be produced from prime output)
-  - `neuron_analysis.json` – top neuron IDs per layer (causal validation)
-
+Please see data/README.md
 
 ### Demo 
 

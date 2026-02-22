@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LLMvul Quick Demo – for reviewers
+LLMvul Quick Demo 
 ===================================
 Runs inference on the **first 5 samples** from the HuggingFace dataset
 ``Chun9622/LLMvul`` using the fine-tuned model ``Chun9622/llmvul-finetuned-gemma``
@@ -23,24 +23,19 @@ import json
 import time
 from datetime import datetime
 
-# ── Repo root ──────────────────────────────────────────────────────────────────
 _DEMO_DIR   = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR    = os.path.dirname(_DEMO_DIR)
 OUTPUT_BASE = os.environ.get("LLMVUL_OUTPUT_DIR", os.path.join(_DEMO_DIR, "output"))
-
-# ── circuit-tracer (optional – needed only for attribution) ───────────────────
 _CT = os.path.join(ROOT_DIR, "circuit-tracer", "circuit-tracer")
 if os.path.isdir(_CT) and _CT not in sys.path:
     sys.path.insert(0, _CT)
 
-# ── Config ────────────────────────────────────────────────────────────────────
 MODEL_ID    = "Chun9622/llmvul-finetuned-gemma"
 DATASET_ID  = "Chun9622/LLMvul"
 N_SAMPLES   = int(os.environ.get("LLMVUL_DEMO_N", "5"))
 MAX_NEW_TOK = 200
 MAX_INPUT   = 512
 
-# ─────────────────────────────────────────────────────────────────────────────
 ts         = datetime.now().strftime("%Y%m%d_%H%M%S")
 OUT_DIR    = os.path.join(OUTPUT_BASE, ts)
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -55,7 +50,6 @@ def log(msg: str = ""):
     _log_fh.flush()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def extract_label(text: str) -> str:
     """Classify model output as 'vul', 'nonvul', or 'unknown'."""
     import re
@@ -83,7 +77,6 @@ def extract_label(text: str) -> str:
     return "unknown"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def load_samples(n_per_class: int):
     """Load first n_per_class vulnerable + n_per_class non-vulnerable samples."""
     log(f"[1/3] Loading dataset ({DATASET_ID}) …")
@@ -129,7 +122,6 @@ def load_samples(n_per_class: int):
     return samples
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def load_model():
     """Load tokenizer + model. Falls back to CPU if no GPU."""
     import torch
@@ -143,7 +135,6 @@ def load_model():
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    # Try circuit-tracer ReplacementModel first; fall back to plain AutoModelForCausalLM
     try:
         import transformer_lens.loading_from_pretrained as _tl  # type: ignore
         _orig = _tl.get_official_model_name
@@ -170,7 +161,6 @@ def load_model():
     return tokenizer, model, DEVICE, "hf"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def run_inference(samples, tokenizer, model, device, model_type):
     """Run batch inference and return list of result dicts."""
     import torch
@@ -224,7 +214,6 @@ def run_inference(samples, tokenizer, model, device, model_type):
     return results
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def compute_metrics(results):
     tp = sum(1 for r in results if r["true_label"] == "vul"    and r["pred_label"] == "vul")
     fp = sum(1 for r in results if r["true_label"] == "nonvul" and r["pred_label"] == "vul")
@@ -244,7 +233,6 @@ def compute_metrics(results):
                 accuracy=acc, precision=prec, recall=rec, f1=f1)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def print_table(results, metrics):
     sep  = "─" * 85
     log(f"\n{'═'*85}")
@@ -268,7 +256,6 @@ def print_table(results, metrics):
     log(f"\n{'═'*85}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def main():
     log("=" * 70)
     log("  LLMvul Quick Demo")
