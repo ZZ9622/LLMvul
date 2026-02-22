@@ -323,3 +323,263 @@ def visualize_circuit_simple(graph, save_path,
     }
 
     return stats
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CWE-Based Circuit Generation  (entry point when run as main script)
+# ══════════════════════════════════════════════════════════════════════════════
+if __name__ == '__main__':
+    import json
+    import gc
+    from collections import defaultdict
+    from datetime import datetime
+    from transformers import AutoTokenizer
+    from circuit_tracer.replacement_model import ReplacementModel
+    from circuit_tracer.attribution.attribute import attribute
+    from circuit_tracer.utils.create_graph_files import create_graph_files
+
+    # ── Paths & config ────────────────────────────────────────────────────────
+    OUTPUT_BASE = os.environ.get("LLMVUL_OUTPUT_DIR", os.path.join(_ROOT_DIR, "out"))
+
+    TARGET_CWES = ["CWE-787", "CWE-476", "CWE-125", "CWE-416", "CWE-119", "CWE-190"]
+    CWE_DESCRIPTIONS = {
+        "CWE-787": "Buffer Overflow (Out-of-bounds Write)",
+        "CWE-476": "NULL Pointer Dereference",
+        "CWE-125": "Out-of-bounds Read",
+        "CWE-416": "Use After Free",
+        "CWE-119": "Memory Buffer Operations",
+        "CWE-190": "Integer Overflow",
+    }
+
+    VUL_PATH   = os.path.join(_ROOT_DIR, "data", "primevul236.jsonl")
+    MODEL_PATH = "Chun9622/llmvul-finetuned-gemma"
+    DEVICE     = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+    MAX_FEATURE_NODES   = 5000
+    NODE_THRESHOLD      = 0.70
+    EDGE_THRESHOLD      = 0.85
+    SHOW_TOP_K_EDGES    = 150
+    MAX_NODES_PER_LAYER = 20
+
+    ts          = datetime.now().strftime("%Y%m%d_%H%M%S")
+    LOG_DIR     = os.path.join(OUTPUT_BASE, "log",   f"cwe_circuits_{ts}")
+    CIRCUIT_DIR = os.path.join(OUTPUT_BASE, "plots", f"cwe_circuits_{ts}", "circuits")
+    os.makedirs(LOG_DIR, exist_ok=True)
+    os.makedirs(CIRCUIT_DIR, exist_ok=True)
+
+    # Redirect stdout/stderr to log file
+    _log_file  = open(os.path.join(LOG_DIR, f"cwe_analysis_{ts}.txt"), "w")
+    sys.stdout = _log_file
+    sys.stderr = _log_file
+
+    print("=" * 80)
+    print("CWE-Based Circuit Visualization Analysis")
+    print("=" * 80)
+    print(f"Target CWEs : {TARGET_CWES}")
+    print(f"Output Dir  : {CIRCUIT_DIR}")
+    print("=" * 80)
+
+    # ── Model patches ─────────────────────────────────────────────────────────
+    def _patch_model_loading():
+        import transformer_lens.loading_from_pretrained as _loading
+        _orig = _loading.get_official_model_name
+        _loading.get_official_model_name = (
+            lambda m: "google/gemma-2-2b" if m == MODEL_PATH else _orig(m)
+        )
+
+    def _patch_model_config_loading():
+        import transformer_lens.loading_from_pretrained as _loading
+        _orig = _loading.get_pretrained_model_config
+        def _patched(m, **kw):
+            if m == MODEL_PATH:
+                from transformers import AutoConfig
+                return AutoConfig.from_pretrained(m)
+            return _orig(m, **kw)
+        _loading.get_pretrained_model_config = _patched
+
+    _patch_model_loading()
+    _patch_model_config_loading()
+
+    print("\n[INFO] Loading Model & Tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    rm = ReplacementModel.from_pretrained(
+        MODEL_PATH, transcoder_set="gemma", device=DEVICE, dtype=torch.float16,
+    )
+    rm.eval()
+    print("[INFO] Model Loaded Successfully.")
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
+    def _clear_gpu():
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
+
+    def _extract_label(text):
+        t = text.lower()
+        if 'vulnerable' in t and 'not vulnerable' not in t: return "vul"
+        if 'safe' in t and 'not safe' not in t: return "nonvul"
+        return "unknown"
+
+    def _load_samples_by_cwe(jsonl_path):
+        cwe_samples = defaultdict(list)
+        with open(jsonl_path) as f:
+            for line in f:
+                try:
+                    obj  = json.loads(line)
+                    cwes = obj.get("cwe", [])
+                    code = obj.get("func", "").strip()
+                    if not code or not cwes:
+                        continue
+                    if isinstance(cwes, str):
+                        cwes = [cwes]
+                    for cwe in cwes:
+                        if cwe in TARGET_CWES:
+                            if len(code) > 1000:
+                                code = code[:1000] + "\n// ... (truncated)"
+                            prompt = (f"Code: {code}\n\n"
+                                      f"Question: Is this code safe or vulnerable?\nAnswer:")
+                            cwe_samples[cwe].append({
+                                "idx": obj.get("idx", -1), "cwe": cwe,
+                                "prompt": prompt, "code_length": len(code),
+                            })
+                except Exception:
+                    pass
+        return cwe_samples
+
+    def _select_representative(samples):
+        if not samples: return None
+        ss = sorted(samples, key=lambda x: abs(x['code_length'] - 400))
+        for s in ss:
+            if 200 <= s['code_length'] <= 600:
+                return s
+        return ss[0]
+
+    def _generate_circuit(cwe, sample):
+        idx, prompt = sample['idx'], sample['prompt']
+        print(f"\n{'='*80}\nProcessing CWE : {cwe}")
+        print(f"Description    : {CWE_DESCRIPTIONS.get(cwe, 'Unknown')}")
+        print(f"Sample ID      : {idx}  |  Code length: {sample['code_length']} chars\n{'='*80}")
+
+        # Step 1: predict
+        print("[STEP 1/3] Running model prediction...")
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(DEVICE)
+        with torch.no_grad():
+            out  = rm.generate(inputs.input_ids, max_new_tokens=50, do_sample=False)
+            pred = _extract_label(tokenizer.decode(out[0], skip_special_tokens=True))
+        print(f"  Prediction: {pred}")
+
+        # Step 2: attribute
+        print("[STEP 2/3] Running attribution analysis...")
+        _clear_gpu()
+        try:
+            with torch.enable_grad():
+                g = attribute(prompt=prompt, model=rm, max_n_logits=3,
+                              batch_size=1, max_feature_nodes=MAX_FEATURE_NODES, verbose=False)
+            print(f"  Active features found: {len(g.active_features) if hasattr(g,'active_features') else 0}")
+
+            # Step 3: visualize
+            print("[STEP 3/3] Generating circuit visualisation...")
+            cwe_clean  = cwe.replace("CWE-", "")
+            desc_clean = (CWE_DESCRIPTIONS.get(cwe, "Unknown")
+                          .replace(" ", "_").replace("/", "_")
+                          .replace("(", "").replace(")", ""))
+            fname     = f"circuit_{cwe_clean}_{desc_clean}_sample{idx}"
+            save_path = os.path.join(CIRCUIT_DIR, fname + ".pdf")
+
+            stats = visualize_circuit_simple(
+                g, save_path,
+                node_threshold=NODE_THRESHOLD,
+                edge_threshold=EDGE_THRESHOLD,
+                max_nodes_per_layer=MAX_NODES_PER_LAYER,
+                show_top_k_edges=SHOW_TOP_K_EDGES,
+                tokenizer=tokenizer,
+            )
+
+            # Save JSON for web viewer
+            try:
+                g.to("cpu")
+                create_graph_files(
+                    graph_or_path=g, slug=fname, scan=getattr(g, "scan", "gemma"),
+                    output_path=CIRCUIT_DIR,
+                    node_threshold=NODE_THRESHOLD, edge_threshold=EDGE_THRESHOLD,
+                )
+                print(f"  ✓ JSON saved: {fname}.json")
+            except Exception as _je:
+                print(f"  [WARN] JSON save failed: {_je}")
+
+            print(f"  ✓ Circuit saved: {fname}.pdf/.png/.txt")
+            return {"cwe": cwe, "idx": idx, "success": True,
+                    "files": {"pdf": save_path,
+                              "txt": save_path.replace(".pdf", ".txt"),
+                              "json": os.path.join(CIRCUIT_DIR, fname + ".json")},
+                    "stats": stats}
+
+        except Exception as e:
+            import traceback
+            print(f"  ✗ Error: {e}")
+            traceback.print_exc()
+            return {"cwe": cwe, "idx": idx, "success": False, "error": str(e)}
+
+    # ── Phase 1 ───────────────────────────────────────────────────────────────
+    print("\n[PHASE 1] Loading and organising samples by CWE...")
+    cwe_samples = _load_samples_by_cwe(VUL_PATH)
+    for cwe in TARGET_CWES:
+        count = len(cwe_samples.get(cwe, []))
+        print(f"  - {cwe} ({CWE_DESCRIPTIONS.get(cwe, 'Unknown')}): {count} samples")
+
+    # ── Phase 2 ───────────────────────────────────────────────────────────────
+    print("\n[PHASE 2] Selecting representative samples...")
+    selected_samples = {}
+    for cwe in TARGET_CWES:
+        s = _select_representative(cwe_samples.get(cwe, []))
+        if s:
+            selected_samples[cwe] = s
+            print(f"  ✓ {cwe}: Sample {s['idx']} (length={s['code_length']})")
+        else:
+            print(f"  ✗ {cwe}: No samples found")
+    print(f"\n[INFO] Selected {len(selected_samples)} samples for visualisation")
+
+    # ── Phase 3 ───────────────────────────────────────────────────────────────
+    print("\n[PHASE 3] Generating circuit visualisations...")
+    results = []
+    for i, (cwe, sample) in enumerate(selected_samples.items(), 1):
+        print(f"\n[{i}/{len(selected_samples)}] Processing {cwe}...")
+        results.append(_generate_circuit(cwe, sample))
+        _clear_gpu()
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    successful = [r for r in results if r.get("success")]
+    failed     = [r for r in results if not r.get("success")]
+    print(f"\n{'='*80}\nANALYSIS COMPLETE\n{'='*80}")
+    print(f"\nSuccessfully generated: {len(successful)}/{len(results)} circuits")
+    for r in successful:
+        print(f"  - {r['cwe']} ({CWE_DESCRIPTIONS.get(r['cwe'], '')}), Sample {r['idx']}")
+    for r in failed:
+        print(f"  ✗ {r['cwe']}: {r.get('error', 'unknown error')}")
+
+    # Markdown summary
+    summary_path = os.path.join(LOG_DIR, "CWE_CIRCUITS_SUMMARY.md")
+    with open(summary_path, 'w') as f:
+        f.write("# CWE-Based Circuit Visualisation Summary\n\n")
+        f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f"**Output Directory:** `{CIRCUIT_DIR}`\n\n")
+        f.write(f"## Generated Circuits\n\nSuccessfully generated {len(successful)} / {len(results)}.\n\n")
+        for r in successful:
+            cwe  = r['cwe']
+            desc = CWE_DESCRIPTIONS.get(cwe, '')
+            f.write(f"### {cwe}: {desc}\n\n")
+            f.write(f"- **Sample ID:** {r['idx']}\n")
+            f.write(f"- **PDF:** `{os.path.basename(r['files']['pdf'])}`\n")
+            f.write(f"- **Statistics:** `{os.path.basename(r['files']['txt'])}`\n")
+            if r.get('stats'):
+                st = r['stats']
+                f.write(f"- **Nodes:** {st.get('total_nodes','?')}  "
+                        f"**Edges:** {st.get('edges','?')}\n")
+            f.write("\n")
+
+    print(f"\n[INFO] Summary: {summary_path}")
+    print("[DONE] All processing complete!")
+    _log_file.close()

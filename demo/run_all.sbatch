@@ -27,7 +27,7 @@
 #   Step 3  causal_patching.py    – causal patching experiment
 #   Step 4  causal_validation.py  – ablation / causal validation
 #   Step 5  advanced_statistical.py – L2 norm statistics
-#   Step 6  circuitplot.py        – circuit visualisation for key samples
+#   Step 6  circuit_plot.py       – CWE-based circuit visualisation (circles)
 #
 # Notes:
 #   • Steps 2–6 require data/tp_tn_samples.jsonl produced by step 1.
@@ -123,7 +123,7 @@ if [ ! -f "${DATA_DIR}/tp_tn_samples.jsonl" ]; then
     echo "            ${DATA_DIR}/tp_tn_samples.jsonl"
     echo "         b) Re-run with this file in place."
     echo ""
-    echo "Skipping steps 2-5. Running circuitplot only."
+    echo "Skipping steps 2-5. Running circuit_plot only."
     SKIP_DOWNSTREAM=1
 else
     SKIP_DOWNSTREAM=0
@@ -144,7 +144,7 @@ if [ "${SKIP_DOWNSTREAM}" -eq 0 ]; then
 fi
 
 # ── Step 6: Circuit Visualization ─────────────────────────────────────────────
-run_step 6 "Circuit Visualization" "circuitplot.py" || true
+run_step 6 "Circuit Visualization" "circuit_plot.py" || true
 
 # ── Step 7: Circuit Analysis (post-hoc, if prime output exists) ───────────────
 if [ -n "${PRIME_OUT_JSON}" ]; then
