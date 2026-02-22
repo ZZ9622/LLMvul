@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-优化的 Circuit 可视化工具
-1. 显示真实 token 文本而不是 Token[N]
-2. 只保留有连接的输入节点
-3. 更松散的布局，便于查看信息流
-"""
-
+# Circuit visualization & attribution plotting for specific samples
 import torch
 import numpy as np
 import matplotlib
@@ -16,7 +10,6 @@ from collections import defaultdict
 import sys
 import os
 
-# 动态添加 circuit_tracer 路径（相对路径，兼容 LLMvul repo）
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _ROOT_DIR   = os.path.dirname(_SCRIPT_DIR)
 _CT_PATH    = os.path.join(_ROOT_DIR, "circuit-tracer", "circuit-tracer")
@@ -32,41 +25,21 @@ def visualize_circuit_simple(graph, save_path,
                              max_nodes_per_layer=10,
                              show_top_k_edges=50,
                              tokenizer=None):
-    """
-    生成优化的 circuit 可视化图
 
-    改进：
-    1. 显示真实 token 文本（需要传入 tokenizer）
-    2. 只保留有出边的输入节点
-    3. 更松散的布局
 
-    Args:
-        graph: circuit_tracer Graph 对象
-        save_path: 保存路径 (PDF)
-        node_threshold: 节点修剪阈值
-        edge_threshold: 边修剪阈值
-        max_nodes_per_layer: 每层最多显示多少个特征节点
-        show_top_k_edges: 显示多少条最重要的边
-        tokenizer: HuggingFace tokenizer (用于解码token)
-    """
+    print(f"[VIS] start to visualize circuit...")
 
-    print(f"[VIS] 开始生成优化的 circuit 图...")
-
-    # 确保在正确的设备上
     device = "cuda" if torch.cuda.is_available() else "cpu"
     graph.to(device)
 
-    # 修剪图
-    print(f"[VIS] 修剪图 (node_threshold={node_threshold}, edge_threshold={edge_threshold})...")
+    print(f"[VIS] graph (node_threshold={node_threshold}, edge_threshold={edge_threshold})...")
     node_mask, edge_mask, cumulative_scores = prune_graph(graph, node_threshold, edge_threshold)
 
-    # 移到 CPU
     node_mask = node_mask.cpu()
     edge_mask = edge_mask.cpu()
     cumulative_scores = cumulative_scores.cpu()
     adj = graph.adjacency_matrix.cpu().numpy()
 
-    # 计算范围
     n_selected_features = len(graph.selected_features) if hasattr(graph, 'selected_features') else len(graph.active_features)
     n_layers = graph.cfg.n_layers
     n_pos = graph.n_pos
@@ -79,8 +52,7 @@ def visualize_circuit_simple(graph, save_path,
     range_embed = (n_selected_features + n_error, n_selected_features + n_error + n_embed)
     range_logit = (n_selected_features + n_error + n_embed, n_selected_features + n_error + n_embed + n_logit)
 
-    # 选择重要的特征节点 (跳过 error 节点)
-    print(f"[VIS] 选择重要节点...")
+    print(f"[VIS] select important feature nodes...")
     important_feature_nodes = []
     for idx in range(range_feat[0], range_feat[1]):
         if node_mask[idx]:
@@ -93,24 +65,21 @@ def visualize_circuit_simple(graph, save_path,
             score = cumulative_scores[idx].item()
             important_feature_nodes.append((idx, layer, pos, feat, score))
 
-    # 按层分组，每层只保留最重要的几个
+# select top nodes per layer to avoid overcrowding
     nodes_by_layer = defaultdict(list)
     for node_info in important_feature_nodes:
         idx, layer, pos, feat, score = node_info
         nodes_by_layer[layer].append(node_info)
 
-    # 每层排序并限制数量
     selected_nodes = []
     for layer in sorted(nodes_by_layer.keys()):
         layer_nodes = sorted(nodes_by_layer[layer], key=lambda x: x[4], reverse=True)
         selected_nodes.extend(layer_nodes[:max_nodes_per_layer])
 
-    # 临时添加所有嵌入节点（后面会过滤）
     embedding_candidates = []
     for idx in range(range_embed[0], range_embed[1]):
         if node_mask[idx]:
             pos = idx - range_embed[0]
-            # 获取 token ID
             if hasattr(graph, 'input_tokens'):
                 token_id = graph.input_tokens[pos]
                 if hasattr(token_id, 'item'):
@@ -118,7 +87,6 @@ def visualize_circuit_simple(graph, save_path,
             else:
                 token_id = pos
 
-            # 解码真实 token 文本
             token_text = "UNK"
             if tokenizer is not None and hasattr(graph, 'input_tokens'):
                 try:
@@ -133,15 +101,12 @@ def visualize_circuit_simple(graph, save_path,
 
             embedding_candidates.append((idx, -1, pos, token_text, cumulative_scores[idx].item()))
 
-    # 添加输出节点
     for idx in range(range_logit[0], range_logit[1]):
         if node_mask[idx]:
             l_idx = idx - range_logit[0]
             selected_nodes.append((idx, 999, l_idx, 0, cumulative_scores[idx].item()))
+    print(f"[VIS] selected {len(selected_nodes)} important feature/logit nodes and {len(embedding_candidates)} candidate embedding nodes before filtering...")
 
-    print(f"[VIS] 初步选中 {len(selected_nodes)} 个特征节点, {len(embedding_candidates)} 个候选输入节点")
-
-    # 找到这些节点之间的重要边
     selected_indices = set([n[0] for n in selected_nodes])
     candidate_embedding_indices = set([n[0] for n in embedding_candidates])
     all_candidate_indices = selected_indices | candidate_embedding_indices
@@ -149,16 +114,14 @@ def visualize_circuit_simple(graph, save_path,
     important_edges = []
     for i in all_candidate_indices:
         for j in all_candidate_indices:
-            if edge_mask[j, i]:  # j是target, i是source
+            if edge_mask[j, i]:  # j means "from", i means "to"
                 weight = adj[j, i]
                 if abs(weight) > 1e-6:
                     important_edges.append((i, j, weight))
 
-    # 按权重排序，只保留最重要的边
     important_edges.sort(key=lambda x: abs(x[2]), reverse=True)
     important_edges = important_edges[:show_top_k_edges]
 
-    # 只保留有连接的输入节点
     edges_from_nodes = set()
     edges_to_nodes   = set()
     for src, tgt, weight in important_edges:
@@ -170,46 +133,37 @@ def visualize_circuit_simple(graph, save_path,
         idx = node_info[0]
         if idx in edges_from_nodes or idx in edges_to_nodes:
             filtered_embedding_nodes.append(node_info)
+    print (f"[VIS] {len(filtered_embedding_nodes)} out of {len(embedding_candidates)} embedding nodes have connections to important edges and are retained for visualization, remaining {len(embedding_candidates) - len(filtered_embedding_nodes)} are filtered out as isolated nodes.")
 
-    print(f"[VIS] 过滤后保留 {len(filtered_embedding_nodes)} 个有连接的输入节点"
-          f"（移除了 {len(embedding_candidates) - len(filtered_embedding_nodes)} 个孤立节点）")
-
-    # 合并所有节点
     selected_nodes.extend(filtered_embedding_nodes)
+    print (f"[VIS] total selected nodes: {len(selected_nodes)},total selected edges: {len(important_edges)}")
 
-    print(f"[VIS] 最终选中 {len(selected_nodes)} 个节点, {len(important_edges)} 条边")
-
-    # 创建网络图
     G = nx.DiGraph()
 
     node_info_dict = {}
     for idx, layer, pos, feat_or_text, score in selected_nodes:
-        if layer == -1:  # 输入 token
+        if layer == -1:  
             label = str(feat_or_text)
             if len(label) > 10:
                 label = label[:8] + ".."
             node_type = 'input'
-        elif layer == 999:  # 输出 logit
+        elif layer == 999:  
             label = f"Logit[{pos}]"
             node_type = 'output'
-        else:  # 特征节点
+        else:  
             label = f"L{layer}\nF{feat_or_text}"
             node_type = 'feature'
 
         G.add_node(idx, label=label, layer=layer, node_type=node_type, score=score)
         node_info_dict[idx] = (label, layer, node_type)
 
-    # 添加边
     for src, tgt, weight in important_edges:
         if src in G and tgt in G:
             G.add_edge(src, tgt, weight=weight)
+    print(f"[VIS] graph construction with pruning completed. Total nodes: {len(G.nodes())}, Total edges: {len(G.edges())}")
 
-    print(f"[VIS] 网络图构建完成: {len(G.nodes())} 节点, {len(G.edges())} 边")
-
-    # 绘制图形
     fig, ax = plt.subplots(figsize=(20, 14))
 
-    # 计算布局
     pos = {}
     layer_groups = defaultdict(list)
     for node in G.nodes():
@@ -237,7 +191,6 @@ def visualize_circuit_simple(graph, save_path,
             x = (i - num_nodes / 2) * horizontal_spacing
             pos[node] = (x, y)
 
-    # 绘制边
     edges   = G.edges()
     weights = [G[u][v]['weight'] for u, v in edges]
     max_weight = max([abs(w) for w in weights]) if weights else 1.0
@@ -252,7 +205,6 @@ def visualize_circuit_simple(graph, save_path,
                                     lw=width, color=color, alpha=alpha,
                                     connectionstyle="arc3,rad=0.1"))
 
-    # 绘制节点
     for node in G.nodes():
         x, y      = pos[node]
         node_type = G.nodes[node]['node_type']
@@ -273,7 +225,6 @@ def visualize_circuit_simple(graph, save_path,
         ax.text(x, y, label, ha='center', va='center',
                 fontsize=fontsize, fontweight=fontweight, zorder=4)
 
-    # 标题
     ax.set_title(f'Circuit Visualization (Optimized Layout)\n'
                  f'{len(G.nodes())} nodes ({len(filtered_embedding_nodes)} input tokens with connections), '
                  f'{len(G.edges())} edges',
@@ -288,7 +239,6 @@ def visualize_circuit_simple(graph, save_path,
         ax.set_xlim(min(all_x) - x_margin, max(all_x) + x_margin)
         ax.set_ylim(min(all_y) - y_margin, max(all_y) + y_margin)
 
-    # 图例
     from matplotlib.patches import Patch
     legend_elements = [
         Patch(facecolor='lightgreen', edgecolor='black', label='Input Tokens (with connections)'),
@@ -301,14 +251,12 @@ def visualize_circuit_simple(graph, save_path,
 
     plt.tight_layout()
 
-    # 保存 PDF
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
-    print(f"[VIS] 图形已保存到: {save_path}")
+    print(f"[VIS] Circuit visualization saved to: {save_path}")
 
-    # 同时保存 PNG
     png_path = save_path.replace('.pdf', '.png')
     plt.savefig(png_path, dpi=150, bbox_inches='tight')
-    print(f"[VIS] PNG 已保存到: {png_path}")
+    print(f"[VIS] PNG version saved to: {png_path}")
 
     plt.close()
 
@@ -325,9 +273,6 @@ def visualize_circuit_simple(graph, save_path,
     return stats
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CWE-Based Circuit Generation  (entry point when run as main script)
-# ══════════════════════════════════════════════════════════════════════════════
 if __name__ == '__main__':
     import json
     import gc
@@ -338,7 +283,6 @@ if __name__ == '__main__':
     from circuit_tracer.attribution.attribute import attribute
     from circuit_tracer.utils.create_graph_files import create_graph_files
 
-    # ── Paths & config ────────────────────────────────────────────────────────
     OUTPUT_BASE = os.environ.get("LLMVUL_OUTPUT_DIR", os.path.join(_ROOT_DIR, "out"))
 
     TARGET_CWES = ["CWE-787", "CWE-476", "CWE-125", "CWE-416", "CWE-119", "CWE-190"]
@@ -367,7 +311,6 @@ if __name__ == '__main__':
     os.makedirs(LOG_DIR, exist_ok=True)
     os.makedirs(CIRCUIT_DIR, exist_ok=True)
 
-    # Redirect stdout/stderr to log file
     _log_file  = open(os.path.join(LOG_DIR, f"cwe_analysis_{ts}.txt"), "w")
     sys.stdout = _log_file
     sys.stderr = _log_file
@@ -379,7 +322,6 @@ if __name__ == '__main__':
     print(f"Output Dir  : {CIRCUIT_DIR}")
     print("=" * 80)
 
-    # ── Model patches ─────────────────────────────────────────────────────────
     def _patch_model_loading():
         import transformer_lens.loading_from_pretrained as _loading
         _orig = _loading.get_official_model_name
@@ -411,7 +353,6 @@ if __name__ == '__main__':
     rm.eval()
     print("[INFO] Model Loaded Successfully.")
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
     def _clear_gpu():
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -463,8 +404,7 @@ if __name__ == '__main__':
         print(f"Description    : {CWE_DESCRIPTIONS.get(cwe, 'Unknown')}")
         print(f"Sample ID      : {idx}  |  Code length: {sample['code_length']} chars\n{'='*80}")
 
-        # Step 1: predict
-        print("[STEP 1/3] Running model prediction...")
+        print("Running model prediction...")
         inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(DEVICE)
         with torch.no_grad():
             out  = rm.generate(inputs.input_ids, max_new_tokens=50, do_sample=False)
@@ -472,7 +412,7 @@ if __name__ == '__main__':
         print(f"  Prediction: {pred}")
 
         # Step 2: attribute
-        print("[STEP 2/3] Running attribution analysis...")
+        print("Running attribution analysis...")
         _clear_gpu()
         try:
             with torch.enable_grad():
@@ -481,7 +421,7 @@ if __name__ == '__main__':
             print(f"  Active features found: {len(g.active_features) if hasattr(g,'active_features') else 0}")
 
             # Step 3: visualize
-            print("[STEP 3/3] Generating circuit visualisation...")
+            print("Generating circuit visualisation...")
             cwe_clean  = cwe.replace("CWE-", "")
             desc_clean = (CWE_DESCRIPTIONS.get(cwe, "Unknown")
                           .replace(" ", "_").replace("/", "_")
@@ -498,7 +438,6 @@ if __name__ == '__main__':
                 tokenizer=tokenizer,
             )
 
-            # Save JSON for web viewer
             try:
                 g.to("cpu")
                 create_graph_files(
@@ -506,11 +445,11 @@ if __name__ == '__main__':
                     output_path=CIRCUIT_DIR,
                     node_threshold=NODE_THRESHOLD, edge_threshold=EDGE_THRESHOLD,
                 )
-                print(f"  ✓ JSON saved: {fname}.json")
+                print(f" JSON saved: {fname}.json")
             except Exception as _je:
                 print(f"  [WARN] JSON save failed: {_je}")
 
-            print(f"  ✓ Circuit saved: {fname}.pdf/.png/.txt")
+            print(f"  Circuit saved: {fname}.pdf/.png/.txt")
             return {"cwe": cwe, "idx": idx, "success": True,
                     "files": {"pdf": save_path,
                               "txt": save_path.replace(".pdf", ".txt"),
@@ -523,15 +462,13 @@ if __name__ == '__main__':
             traceback.print_exc()
             return {"cwe": cwe, "idx": idx, "success": False, "error": str(e)}
 
-    # ── Phase 1 ───────────────────────────────────────────────────────────────
-    print("\n[PHASE 1] Loading and organising samples by CWE...")
+    print("\nLoading and organising samples by CWE...")
     cwe_samples = _load_samples_by_cwe(VUL_PATH)
     for cwe in TARGET_CWES:
         count = len(cwe_samples.get(cwe, []))
         print(f"  - {cwe} ({CWE_DESCRIPTIONS.get(cwe, 'Unknown')}): {count} samples")
 
-    # ── Phase 2 ───────────────────────────────────────────────────────────────
-    print("\n[PHASE 2] Selecting representative samples...")
+    print("\nSelecting representative samples...")
     selected_samples = {}
     for cwe in TARGET_CWES:
         s = _select_representative(cwe_samples.get(cwe, []))
@@ -542,15 +479,13 @@ if __name__ == '__main__':
             print(f"  ✗ {cwe}: No samples found")
     print(f"\n[INFO] Selected {len(selected_samples)} samples for visualisation")
 
-    # ── Phase 3 ───────────────────────────────────────────────────────────────
-    print("\n[PHASE 3] Generating circuit visualisations...")
+    print("\nGenerating circuit visualisations...")
     results = []
     for i, (cwe, sample) in enumerate(selected_samples.items(), 1):
         print(f"\n[{i}/{len(selected_samples)}] Processing {cwe}...")
         results.append(_generate_circuit(cwe, sample))
         _clear_gpu()
 
-    # ── Summary ───────────────────────────────────────────────────────────────
     successful = [r for r in results if r.get("success")]
     failed     = [r for r in results if not r.get("success")]
     print(f"\n{'='*80}\nANALYSIS COMPLETE\n{'='*80}")
@@ -560,7 +495,6 @@ if __name__ == '__main__':
     for r in failed:
         print(f"  ✗ {r['cwe']}: {r.get('error', 'unknown error')}")
 
-    # Markdown summary
     summary_path = os.path.join(LOG_DIR, "CWE_CIRCUITS_SUMMARY.md")
     with open(summary_path, 'w') as f:
         f.write("# CWE-Based Circuit Visualisation Summary\n\n")
