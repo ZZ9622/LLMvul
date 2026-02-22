@@ -8,15 +8,17 @@ Usage:
 Keywords:
     prime               Main pipeline: vulnerability prediction + L0 attribution
     attention           Attention head importance analysis
-    causal_patching     Causal patching experiment (safe→vulnerable)
+    causal_patching     Bidirectional steering experiment (safe↔vulnerable)
     causal_validation   Causal validation / ablation studies
     advanced_statistical Advanced statistical analysis (L2 norms, effect sizes)
+    mlp_neuron          MLP neuron activation analysis (TP/TN heatmaps)
     analyze_circuits    Post-hoc circuit analysis (pass a prime output JSON path)
     circuitplot         Circuit attribution & visualization for specific samples
 
 Examples:
     python scripts/main.py prime
     python scripts/main.py attention
+    python scripts/main.py mlp_neuron
     python scripts/main.py analyze_circuits ./out/log/20250101_120000/out.json
     python scripts/main.py circuitplot
 """
@@ -33,6 +35,7 @@ KEYWORD_MAP = {
     "causal_patching":      "causal_patching.py",
     "causal_validation":    "causal_validation.py",
     "advanced_statistical": "advanced_statistical.py",
+    "mlp_neuron":           "mlp_neuron_analysis.py",
     "analyze_circuits":     "analyze_circuits.py",
     "circuitplot":          "circuitplot.py",
 }
@@ -55,14 +58,12 @@ def main():
         print(f"[ERROR] Script not found: {script}")
         sys.exit(1)
 
-    # Forward extra args via sys.argv so scripts that read sys.argv work correctly
     sys.argv = [script] + extra_args
 
     print(f"[INFO] Running: {script}")
     with open(script, "r", encoding="utf-8") as fh:
         code = fh.read()
 
-    # Execute in a fresh namespace that has __file__ set to the target script
     ns = {"__file__": script, "__name__": "__main__"}
     exec(compile(code, script, "exec"), ns)
 

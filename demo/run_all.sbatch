@@ -22,12 +22,13 @@
 #   sbatch demo/run_all.sbatch
 #
 # What this script does:
-#   Step 1  prime.py              – main pipeline (prediction + L0 attribution)
-#   Step 2  attention_analysis.py – attention head importance
-#   Step 3  causal_patching.py    – causal patching experiment
-#   Step 4  causal_validation.py  – ablation / causal validation
-#   Step 5  advanced_statistical.py – L2 norm statistics
-#   Step 6  circuit_plot.py       – CWE-based circuit visualisation (circles)
+#   prime.py               – main pipeline (prediction + L0 attribution)
+#   attention_analysis.py  – attention head importance
+#   causal_patching.py     – bidirectional steering experiment
+#   causal_validation.py   – ablation / causal validation
+#   advanced_statistical.py – L2 norm statistics
+#   mlp_neuron_analysis.py – MLP neuron activation analysis (TP/TN)
+#   circuit_plot.py        – CWE-based circuit visualisation (circles)
 #
 # Notes:
 #   • Set CONDA_ENV below to match your conda/venv environment.
@@ -76,29 +77,28 @@ echo " Output : ${OUT_DIR}"
 echo " Started: $(date)"
 
 run_step() {
-    local step_num="$1"
-    local step_name="$2"
-    local script="$3"
-    shift 3
+    local step_name="$1"
+    local script="$2"
+    shift 2
     echo ""
     echo "──────────────────────────────────────────────────────────"
-    echo " Step ${step_num}: ${step_name}"
+    echo " ${step_name}"
     echo " Script : ${script}"
     echo " Started: $(date)"
     echo "──────────────────────────────────────────────────────────"
     ${PYTHON} "${SCRIPTS_DIR}/${script}" "$@"
     local rc=$?
     if [ ${rc} -eq 0 ]; then
-        echo " [OK] Step ${step_num} finished at $(date)"
+        echo " [OK] ${step_name} finished at $(date)"
     else
-        echo " [WARN] Step ${step_num} exited with code ${rc} – continuing…"
+        echo " [WARN] ${step_name} exited with code ${rc} – continuing…"
     fi
     return ${rc}
 }
 
 # ── Prime (main pipeline) ─────────────────────────────────────────────
 # Generates: out/.../log/out.json  and  out/.../log/all_predictions.json
-run_step 1 "Main Pipeline (prime.py)" "prime.py"
+run_step "Main Pipeline (prime.py)" "prime.py"
 
 PRIME_OUT_JSON="$(find "${OUT_DIR}" -name "out.json" -newer "${SCRIPTS_DIR}/prime.py" \
     2>/dev/null | sort -r | head -1)"
@@ -108,32 +108,33 @@ echo "Most recent prime output JSON: ${PRIME_OUT_JSON:-<not found>}"
 if [ ! -f "${DATA_DIR}/tp_tn_samples.jsonl" ]; then
     echo ""
     echo "[WARN] data/tp_tn_samples.jsonl not found."
-    echo "       Downstream analyses (steps 2-5) require this file."
+    echo "       Downstream analyses require this file."
     echo "       Either:"
     echo "         a) Extract TP/TN predictions from prime output and save to"
     echo "            ${DATA_DIR}/tp_tn_samples.jsonl"
     echo "         b) Re-run with this file in place."
     echo ""
-    echo "Skipping steps 2-5. Running circuit_plot only."
+    echo "Skipping downstream analyses. Running circuit_plot only."
     SKIP_DOWNSTREAM=1
 else
     SKIP_DOWNSTREAM=0
 fi
 
 if [ "${SKIP_DOWNSTREAM}" -eq 0 ]; then
-    run_step 2 "Attention Head Analysis" "attention_analysis.py" || true
-    run_step 3 "Causal Patching" "causal_patching.py" || true
-    run_step 4 "Causal Validation (Ablation)" "causal_validation.py" || true
-    run_step 5 "Advanced Statistical Analysis" "advanced_statistical.py" || true
+    run_step "Attention Head Analysis"          "attention_analysis.py"   || true
+    run_step "Causal Patching (Bidirectional)" "causal_patching.py"      || true
+    run_step "Causal Validation (Ablation)"    "causal_validation.py"    || true
+    run_step "Advanced Statistical Analysis"   "advanced_statistical.py" || true
+    run_step "MLP Neuron Activation Analysis"  "mlp_neuron_analysis.py"  || true
 fi
 
-run_step 6 "Circuit Visualization" "circuit_plot.py" || true
+run_step "Circuit Visualization" "circuit_plot.py" || true
 
 if [ -n "${PRIME_OUT_JSON}" ]; then
-    run_step 7 "Circuit Analysis (post-hoc)" "analyze_circuits.py" "${PRIME_OUT_JSON}" || true
+    run_step "Circuit Analysis (post-hoc)" "analyze_circuits.py" "${PRIME_OUT_JSON}" || true
 else
     echo ""
-    echo "[SKIP] Step 7 (analyze_circuits.py): no prime output JSON found."
+    echo "[SKIP] analyze_circuits.py: no prime output JSON found."
 fi
 
 echo ""
