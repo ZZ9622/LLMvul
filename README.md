@@ -52,8 +52,6 @@ On a Slurm cluster, from repo root:
 sbatch demo/run_all.sbatch
 ```
 
-Adjust `#SBATCH` partition/account in `demo/run_all.sbatch` for your cluster. Downstream scripts (attention, causal_*) expect `data/tp_tn_samples.jsonl`; produce it from prime output or place it in `data/` if you have it.
-
 ## License
 
 See repository license file.
