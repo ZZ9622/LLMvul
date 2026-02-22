@@ -411,7 +411,6 @@ if __name__ == '__main__':
             pred = _extract_label(tokenizer.decode(out[0], skip_special_tokens=True))
         print(f"  Prediction: {pred}")
 
-        # Step 2: attribute
         print("Running attribution analysis...")
         _clear_gpu()
         try:
