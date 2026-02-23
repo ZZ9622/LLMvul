@@ -9,8 +9,6 @@
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:1
 # ── Adjust the following two lines for your cluster ──────────────────────────
-#SBATCH --account=lu2025-2-37
-#SBATCH --partition=gpua100
 ##SBATCH --partition=gpu
 ##SBATCH --account=your_account
 # ─────────────────────────────────────────────────────────────────────────────
