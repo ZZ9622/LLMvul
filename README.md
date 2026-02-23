@@ -28,6 +28,7 @@ Fine-tuned Gemma for vulnerability detection:
 
 Please see data/README.md
 
+<!--
 ### Demo 
 
 Quick run on the first 5 samples from the HuggingFace dataset:
@@ -37,6 +38,7 @@ python demo/demo.py
 ```
 
 Output appears under `demo/output/`. Model and dataset are downloaded from HuggingFace on first run.
+-->
 
 ### HPC (run all scripts)
 
