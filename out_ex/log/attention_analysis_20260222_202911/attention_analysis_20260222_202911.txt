@@ -1,0 +1,169 @@
+================================================================================
+Attention Head Importance Analysis
+================================================================================
+Timestamp: 20260222_202911
+Device: cuda:0
+Output: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911
+================================================================================
+
+[1/6] Loading Model & Tokenizer...
+Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s]Fetching 26 files:   4%|▍         | 1/26 [00:00<00:09,  2.69it/s]Fetching 26 files:  35%|███▍      | 9/26 [00:00<00:00, 23.35it/s]Fetching 26 files:  65%|██████▌   | 17/26 [00:00<00:00, 37.85it/s]Fetching 26 files:  96%|█████████▌| 25/26 [00:00<00:00, 46.28it/s]Fetching 26 files: 100%|██████████| 26/26 [00:00<00:00, 35.82it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:08<00:16,  8.07s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:22<00:11, 11.55s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:23<00:00,  6.80s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:23<00:00,  7.73s/it]
+Loaded pretrained model Chun9622/llmvul-finetuned-gemma into HookedTransformer
+  Layers: 26
+  Heads per layer: 8
+  Total heads: 208
+
+[2/6] Loading TP/TN samples from /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/data/tp_tn_samples.jsonl...
+  Loaded 83 TP samples (Vulnerable, correctly detected)
+  Loaded 222 TN samples (Safe, correctly detected)
+  Limited to 100 TN samples
+
+[3/6] Extracting attention patterns from TP samples...
+  Progress: 10/83
+  Progress: 20/83
+  Progress: 30/83
+  Progress: 40/83
+  Progress: 50/83
+  Progress: 60/83
+  Progress: 70/83
+  Progress: 80/83
+  Successfully processed 83/83 samples
+
+[3/6] Extracting attention patterns from TN samples...
+  Progress: 10/100
+  Progress: 20/100
+  Progress: 30/100
+  Progress: 40/100
+  Progress: 50/100
+  Progress: 60/100
+  Progress: 70/100
+  Progress: 80/100
+  Progress: 90/100
+  Progress: 100/100
+  Successfully processed 100/100 samples
+
+[4/6] Computing Attention Importance Scores...
+
+  Top-10 Most Important Attention Heads:
+  Rank   Layer    Head     Importance      Max(TP)         Max(TN)        
+  ---------------------------------------------------------------------------
+  1      5        2             -0.488989       0.360679       0.493675
+  2      2        2             -0.423475       0.432143       0.554277
+  3      21       5             -0.411157       0.287021       0.427162
+  4      7        6             -0.411024       0.012600       0.020895
+  5      0        2             -0.406797       0.072489       0.086013
+  6      1        6             -0.360858       0.068183       0.112466
+  7      17       3             -0.359640       0.236725       0.323649
+  8      0        5             -0.313146       0.308931       0.355298
+  9      7        4             -0.309863       0.026461       0.032993
+  10     0        3             -0.301709       0.108375       0.148999
+
+  Results saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/attention_analysis_20260222_202911/attention_head_importance.json
+
+[4.5/6] Analyzing CWE-specific attention patterns...
+  Found 6 CWE categories with >= 5 samples:
+    CWE-787: 18 samples
+    CWE-125: 8 samples
+    CWE-703: 7 samples
+    CWE-416: 6 samples
+    CWE-119: 6 samples
+    CWE-362: 5 samples
+
+  Extracting attention for CWE-125 (8 samples)...
+
+[3/6] Extracting attention patterns from CWE-125 samples...
+  Successfully processed 8/8 samples
+
+  Extracting attention for CWE-787 (18 samples)...
+
+[3/6] Extracting attention patterns from CWE-787 samples...
+  Progress: 10/18
+  Successfully processed 18/18 samples
+
+  Extracting attention for CWE-703 (7 samples)...
+
+[3/6] Extracting attention patterns from CWE-703 samples...
+  Successfully processed 7/7 samples
+
+  Extracting attention for CWE-362 (5 samples)...
+
+[3/6] Extracting attention patterns from CWE-362 samples...
+  Successfully processed 5/5 samples
+
+  Extracting attention for CWE-416 (6 samples)...
+
+[3/6] Extracting attention patterns from CWE-416 samples...
+  Successfully processed 6/6 samples
+
+  Extracting attention for CWE-119 (6 samples)...
+
+[3/6] Extracting attention patterns from CWE-119 samples...
+  Successfully processed 6/6 samples
+
+  CWE-specific results saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/attention_analysis_20260222_202911/cwe_attention_analysis.json
+
+  Generating CWE attention head comparison heatmap...
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/cwe_attention_heatmap.png
+
+  Generating per-CWE top attention heads chart...
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/cwe_top_heads.png
+
+  Computing attention head overlap between CWE categories...
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/cwe_head_overlap.png
+
+  CWE-Specific Attention Analysis Summary:
+  CWE             Samples    Top Head        Importance  
+  ------------------------------------------------------------
+  CWE-119         6          L21H5              -0.161047
+  CWE-125         8          L21H5              -0.146956
+  CWE-362         5          L3H5               0.317132
+  CWE-416         6          L5H2              -0.196165
+  CWE-703         7          L3H6               0.207061
+  CWE-787         18         L21H5              -0.144423
+
+[5/6] Generating attention heatmaps for Top-3 heads...
+
+  [1/3] Layer 5, Head 2
+      Importance: -0.488989
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/attention_rank1_L5H2.png
+      TP: Sink=6.89%, Code Max=0.1016
+      TN: Sink=9.15%, Code Max=0.3732
+
+  [2/3] Layer 2, Head 2
+      Importance: -0.423475
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/attention_rank2_L2H2.png
+      TP: Sink=6.40%, Code Max=0.5434
+      TN: Sink=4.28%, Code Max=0.9077
+
+  [3/3] Layer 21, Head 5
+      Importance: -0.411157
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/attention_rank3_L21H5.png
+      TP: Sink=14.66%, Code Max=0.0658
+      TN: Sink=12.25%, Code Max=0.2364
+
+  Generating summary visualizations...
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/attention_importance_ranking.png
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911/attention_layer_distribution.png
+
+  Generating summary report...
+      Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/attention_analysis_20260222_202911/ATTENTION_ANALYSIS_SUMMARY.md
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================
+
+Generated files:
+  Plots: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/attention_analysis_20260222_202911
+  Logs: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/attention_analysis_20260222_202911
+
+Key outputs:
+  - 3 attention heatmap comparisons
+  - Top-10 importance ranking chart
+  - Layer-wise distribution chart
+  - CWE-specific attention analysis (6 categories)
+  - CWE attention head heatmap
+  - CWE head overlap matrix
+  - Summary report with interpretation guide
+
+================================================================================

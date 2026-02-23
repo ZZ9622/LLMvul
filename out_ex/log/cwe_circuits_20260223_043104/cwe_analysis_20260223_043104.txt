@@ -1,0 +1,203 @@
+================================================================================
+CWE-Based Circuit Visualization Analysis
+================================================================================
+Target CWEs : ['CWE-787', 'CWE-476', 'CWE-125', 'CWE-416', 'CWE-119', 'CWE-190']
+Output Dir  : /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits
+================================================================================
+
+[INFO] Loading Model & Tokenizer...
+Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s]Fetching 26 files:   4%|▍         | 1/26 [00:00<00:09,  2.71it/s]Fetching 26 files:  38%|███▊      | 10/26 [00:00<00:00, 25.79it/s]Fetching 26 files:  69%|██████▉   | 18/26 [00:00<00:00, 38.00it/s]Fetching 26 files: 100%|██████████| 26/26 [00:00<00:00, 46.60it/s]Fetching 26 files: 100%|██████████| 26/26 [00:00<00:00, 35.41it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:06<00:12,  6.42s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:16<00:08,  8.38s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:16<00:00,  4.92s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:16<00:00,  5.66s/it]
+Loaded pretrained model Chun9622/llmvul-finetuned-gemma into HookedTransformer
+[INFO] Model Loaded Successfully.
+
+Loading and organising samples by CWE...
+  - CWE-787 (Buffer Overflow (Out-of-bounds Write)): 36 samples
+  - CWE-476 (NULL Pointer Dereference): 20 samples
+  - CWE-125 (Out-of-bounds Read): 17 samples
+  - CWE-416 (Use After Free): 18 samples
+  - CWE-119 (Memory Buffer Operations): 13 samples
+  - CWE-190 (Integer Overflow): 9 samples
+
+Selecting representative samples...
+  ✓ CWE-787: Sample 214272 (length=401)
+  ✓ CWE-476: Sample 210278 (length=402)
+  ✓ CWE-125: Sample 206845 (length=352)
+  ✓ CWE-416: Sample 216946 (length=402)
+  ✓ CWE-119: Sample 206555 (length=400)
+  ✓ CWE-190: Sample 195402 (length=312)
+
+[INFO] Selected 6 samples for visualisation
+
+Generating circuit visualisations...
+
+[1/6] Processing CWE-787...
+
+================================================================================
+Processing CWE : CWE-787
+Description    : Buffer Overflow (Out-of-bounds Write)
+Sample ID      : 214272  |  Code length: 401 chars
+================================================================================
+Running model prediction...
+  0%|          | 0/50 [00:00<?, ?it/s]  2%|▏         | 1/50 [00:00<00:18,  2.66it/s]  6%|▌         | 3/50 [00:00<00:06,  7.25it/s] 12%|█▏        | 6/50 [00:00<00:03, 12.52it/s] 18%|█▊        | 9/50 [00:00<00:02, 15.92it/s] 18%|█▊        | 9/50 [00:00<00:03, 11.38it/s]
+  Prediction: vul
+Running attribution analysis...
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  Active features found: 171600
+Generating circuit visualisation...
+[VIS] start to visualize circuit...
+[VIS] graph (node_threshold=0.7, edge_threshold=0.85)...
+[VIS] select important feature nodes...
+[VIS] selected 384 important feature/logit nodes and 183 candidate embedding nodes before filtering...
+[VIS] 21 out of 183 embedding nodes have connections to important edges and are retained for visualization, remaining 162 are filtered out as isolated nodes.
+[VIS] total selected nodes: 405,total selected edges: 150
+[VIS] graph construction with pruning completed. Total nodes: 405, Total edges: 150
+[VIS] Circuit visualization saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_787_Buffer_Overflow_Out-of-bounds_Write_sample214272.pdf
+[VIS] PNG version saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_787_Buffer_Overflow_Out-of-bounds_Write_sample214272.png
+ JSON saved: circuit_787_Buffer_Overflow_Out-of-bounds_Write_sample214272.json
+  Circuit saved: circuit_787_Buffer_Overflow_Out-of-bounds_Write_sample214272.pdf/.png/.txt
+
+[2/6] Processing CWE-476...
+
+================================================================================
+Processing CWE : CWE-476
+Description    : NULL Pointer Dereference
+Sample ID      : 210278  |  Code length: 402 chars
+================================================================================
+Running model prediction...
+  0%|          | 0/50 [00:00<?, ?it/s]  4%|▍         | 2/50 [00:00<00:02, 17.57it/s] 10%|█         | 5/50 [00:00<00:02, 19.86it/s] 10%|█         | 5/50 [00:00<00:02, 16.50it/s]
+  Prediction: vul
+Running attribution analysis...
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  Active features found: 155882
+Generating circuit visualisation...
+[VIS] start to visualize circuit...
+[VIS] graph (node_threshold=0.7, edge_threshold=0.85)...
+[VIS] select important feature nodes...
+[VIS] selected 403 important feature/logit nodes and 161 candidate embedding nodes before filtering...
+[VIS] 21 out of 161 embedding nodes have connections to important edges and are retained for visualization, remaining 140 are filtered out as isolated nodes.
+[VIS] total selected nodes: 424,total selected edges: 150
+[VIS] graph construction with pruning completed. Total nodes: 424, Total edges: 150
+[VIS] Circuit visualization saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_476_NULL_Pointer_Dereference_sample210278.pdf
+[VIS] PNG version saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_476_NULL_Pointer_Dereference_sample210278.png
+ JSON saved: circuit_476_NULL_Pointer_Dereference_sample210278.json
+  Circuit saved: circuit_476_NULL_Pointer_Dereference_sample210278.pdf/.png/.txt
+
+[3/6] Processing CWE-125...
+
+================================================================================
+Processing CWE : CWE-125
+Description    : Out-of-bounds Read
+Sample ID      : 206845  |  Code length: 352 chars
+================================================================================
+Running model prediction...
+  0%|          | 0/50 [00:00<?, ?it/s]  4%|▍         | 2/50 [00:00<00:02, 16.53it/s] 10%|█         | 5/50 [00:00<00:02, 19.45it/s] 16%|█▌        | 8/50 [00:00<00:02, 20.30it/s] 22%|██▏       | 11/50 [00:00<00:01, 20.67it/s] 28%|██▊       | 14/50 [00:00<00:01, 20.88it/s] 34%|███▍      | 17/50 [00:00<00:01, 21.00it/s] 40%|████      | 20/50 [00:00<00:01, 21.11it/s] 46%|████▌     | 23/50 [00:01<00:01, 21.17it/s] 52%|█████▏    | 26/50 [00:01<00:01, 21.21it/s] 58%|█████▊    | 29/50 [00:01<00:00, 21.25it/s] 64%|██████▍   | 32/50 [00:01<00:00, 21.29it/s] 70%|███████   | 35/50 [00:01<00:00, 21.30it/s] 76%|███████▌  | 38/50 [00:01<00:00, 21.40it/s] 82%|████████▏ | 41/50 [00:01<00:00, 21.09it/s] 88%|████████▊ | 44/50 [00:02<00:00, 21.24it/s] 94%|█████████▍| 47/50 [00:02<00:00, 21.36it/s]100%|██████████| 50/50 [00:02<00:00, 21.45it/s]100%|██████████| 50/50 [00:02<00:00, 21.07it/s]
+  Prediction: vul
+Running attribution analysis...
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  Active features found: 159073
+Generating circuit visualisation...
+[VIS] start to visualize circuit...
+[VIS] graph (node_threshold=0.7, edge_threshold=0.85)...
+[VIS] select important feature nodes...
+[VIS] selected 382 important feature/logit nodes and 168 candidate embedding nodes before filtering...
+[VIS] 26 out of 168 embedding nodes have connections to important edges and are retained for visualization, remaining 142 are filtered out as isolated nodes.
+[VIS] total selected nodes: 408,total selected edges: 150
+[VIS] graph construction with pruning completed. Total nodes: 408, Total edges: 150
+[VIS] Circuit visualization saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_125_Out-of-bounds_Read_sample206845.pdf
+[VIS] PNG version saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_125_Out-of-bounds_Read_sample206845.png
+ JSON saved: circuit_125_Out-of-bounds_Read_sample206845.json
+  Circuit saved: circuit_125_Out-of-bounds_Read_sample206845.pdf/.png/.txt
+
+[4/6] Processing CWE-416...
+
+================================================================================
+Processing CWE : CWE-416
+Description    : Use After Free
+Sample ID      : 216946  |  Code length: 402 chars
+================================================================================
+Running model prediction...
+  0%|          | 0/50 [00:00<?, ?it/s]  4%|▍         | 2/50 [00:00<00:02, 17.20it/s] 10%|█         | 5/50 [00:00<00:02, 19.78it/s] 16%|█▌        | 8/50 [00:00<00:02, 20.53it/s] 18%|█▊        | 9/50 [00:00<00:02, 18.31it/s]
+  Prediction: vul
+Running attribution analysis...
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  Active features found: 172064
+Generating circuit visualisation...
+[VIS] start to visualize circuit...
+[VIS] graph (node_threshold=0.7, edge_threshold=0.85)...
+[VIS] select important feature nodes...
+[VIS] selected 379 important feature/logit nodes and 180 candidate embedding nodes before filtering...
+[VIS] 26 out of 180 embedding nodes have connections to important edges and are retained for visualization, remaining 154 are filtered out as isolated nodes.
+[VIS] total selected nodes: 405,total selected edges: 150
+[VIS] graph construction with pruning completed. Total nodes: 405, Total edges: 150
+[VIS] Circuit visualization saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_416_Use_After_Free_sample216946.pdf
+[VIS] PNG version saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_416_Use_After_Free_sample216946.png
+ JSON saved: circuit_416_Use_After_Free_sample216946.json
+  Circuit saved: circuit_416_Use_After_Free_sample216946.pdf/.png/.txt
+
+[5/6] Processing CWE-119...
+
+================================================================================
+Processing CWE : CWE-119
+Description    : Memory Buffer Operations
+Sample ID      : 206555  |  Code length: 400 chars
+================================================================================
+Running model prediction...
+  0%|          | 0/50 [00:00<?, ?it/s]  4%|▍         | 2/50 [00:00<00:02, 17.80it/s] 10%|█         | 5/50 [00:00<00:02, 20.10it/s] 10%|█         | 5/50 [00:00<00:02, 16.69it/s]
+  Prediction: vul
+Running attribution analysis...
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  Active features found: 169714
+Generating circuit visualisation...
+[VIS] start to visualize circuit...
+[VIS] graph (node_threshold=0.7, edge_threshold=0.85)...
+[VIS] select important feature nodes...
+[VIS] selected 382 important feature/logit nodes and 185 candidate embedding nodes before filtering...
+[VIS] 26 out of 185 embedding nodes have connections to important edges and are retained for visualization, remaining 159 are filtered out as isolated nodes.
+[VIS] total selected nodes: 408,total selected edges: 150
+[VIS] graph construction with pruning completed. Total nodes: 408, Total edges: 150
+[VIS] Circuit visualization saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_119_Memory_Buffer_Operations_sample206555.pdf
+[VIS] PNG version saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_119_Memory_Buffer_Operations_sample206555.png
+ JSON saved: circuit_119_Memory_Buffer_Operations_sample206555.json
+  Circuit saved: circuit_119_Memory_Buffer_Operations_sample206555.pdf/.png/.txt
+
+[6/6] Processing CWE-190...
+
+================================================================================
+Processing CWE : CWE-190
+Description    : Integer Overflow
+Sample ID      : 195402  |  Code length: 312 chars
+================================================================================
+Running model prediction...
+  0%|          | 0/50 [00:00<?, ?it/s]  4%|▍         | 2/50 [00:00<00:02, 19.06it/s] 10%|█         | 5/50 [00:00<00:02, 20.60it/s] 16%|█▌        | 8/50 [00:00<00:01, 21.03it/s] 22%|██▏       | 11/50 [00:00<00:01, 20.89it/s] 28%|██▊       | 14/50 [00:00<00:01, 21.08it/s] 34%|███▍      | 17/50 [00:00<00:01, 21.20it/s] 40%|████      | 20/50 [00:00<00:01, 21.30it/s] 46%|████▌     | 23/50 [00:01<00:01, 21.35it/s] 52%|█████▏    | 26/50 [00:01<00:01, 21.38it/s] 58%|█████▊    | 29/50 [00:01<00:00, 21.20it/s] 64%|██████▍   | 32/50 [00:01<00:00, 21.26it/s] 70%|███████   | 35/50 [00:01<00:00, 21.31it/s] 76%|███████▌  | 38/50 [00:01<00:00, 21.35it/s] 82%|████████▏ | 41/50 [00:01<00:00, 21.39it/s] 88%|████████▊ | 44/50 [00:02<00:00, 21.39it/s] 94%|█████████▍| 47/50 [00:02<00:00, 21.35it/s]100%|██████████| 50/50 [00:02<00:00, 21.36it/s]100%|██████████| 50/50 [00:02<00:00, 21.23it/s]
+  Prediction: vul
+Running attribution analysis...
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  Active features found: 113510
+Generating circuit visualisation...
+[VIS] start to visualize circuit...
+[VIS] graph (node_threshold=0.7, edge_threshold=0.85)...
+[VIS] select important feature nodes...
+[VIS] selected 391 important feature/logit nodes and 121 candidate embedding nodes before filtering...
+[VIS] 22 out of 121 embedding nodes have connections to important edges and are retained for visualization, remaining 99 are filtered out as isolated nodes.
+[VIS] total selected nodes: 413,total selected edges: 150
+[VIS] graph construction with pruning completed. Total nodes: 413, Total edges: 150
+[VIS] Circuit visualization saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_190_Integer_Overflow_sample195402.pdf
+[VIS] PNG version saved to: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/cwe_circuits_20260223_043104/circuits/circuit_190_Integer_Overflow_sample195402.png
+ JSON saved: circuit_190_Integer_Overflow_sample195402.json
+  Circuit saved: circuit_190_Integer_Overflow_sample195402.pdf/.png/.txt
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================
+
+Successfully generated: 6/6 circuits
+  - CWE-787 (Buffer Overflow (Out-of-bounds Write)), Sample 214272
+  - CWE-476 (NULL Pointer Dereference), Sample 210278
+  - CWE-125 (Out-of-bounds Read), Sample 206845
+  - CWE-416 (Use After Free), Sample 216946
+  - CWE-119 (Memory Buffer Operations), Sample 206555
+  - CWE-190 (Integer Overflow), Sample 195402
+
+[INFO] Summary: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/cwe_circuits_20260223_043104/CWE_CIRCUITS_SUMMARY.md
+[DONE] All processing complete!

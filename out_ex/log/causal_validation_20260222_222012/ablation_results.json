@@ -1,0 +1,152 @@
+{
+  "baseline": {
+    "tp_correct": 83,
+    "tp_total": 83,
+    "tn_correct": 222,
+    "tn_total": 222,
+    "tp_accuracy": 1.0,
+    "tn_accuracy": 1.0,
+    "overall_accuracy": 1.0
+  },
+  "layer_ablation": {
+    "layer_6": {
+      "tp_correct": 23,
+      "tp_total": 83,
+      "tn_correct": 210,
+      "tn_total": 222,
+      "tp_accuracy": 0.27710843373493976,
+      "tn_accuracy": 0.9459459459459459,
+      "overall_accuracy": 0.7639344262295082
+    },
+    "layer_7": {
+      "tp_correct": 16,
+      "tp_total": 83,
+      "tn_correct": 140,
+      "tn_total": 222,
+      "tp_accuracy": 0.1927710843373494,
+      "tn_accuracy": 0.6306306306306306,
+      "overall_accuracy": 0.5114754098360655
+    },
+    "layer_10": {
+      "tp_correct": 16,
+      "tp_total": 83,
+      "tn_correct": 215,
+      "tn_total": 222,
+      "tp_accuracy": 0.1927710843373494,
+      "tn_accuracy": 0.9684684684684685,
+      "overall_accuracy": 0.7573770491803279
+    },
+    "layer_11": {
+      "tp_correct": 5,
+      "tp_total": 83,
+      "tn_correct": 144,
+      "tn_total": 222,
+      "tp_accuracy": 0.060240963855421686,
+      "tn_accuracy": 0.6486486486486487,
+      "overall_accuracy": 0.4885245901639344
+    },
+    "layer_1_control": {
+      "tp_correct": 45,
+      "tp_total": 83,
+      "tn_correct": 114,
+      "tn_total": 222,
+      "tp_accuracy": 0.5421686746987951,
+      "tn_accuracy": 0.5135135135135135,
+      "overall_accuracy": 0.521311475409836
+    },
+    "layer_2_control": {
+      "tp_correct": 13,
+      "tp_total": 83,
+      "tn_correct": 144,
+      "tn_total": 222,
+      "tp_accuracy": 0.1566265060240964,
+      "tn_accuracy": 0.6486486486486487,
+      "overall_accuracy": 0.5147540983606558
+    },
+    "layer_15_control": {
+      "tp_correct": 12,
+      "tp_total": 83,
+      "tn_correct": 215,
+      "tn_total": 222,
+      "tp_accuracy": 0.14457831325301204,
+      "tn_accuracy": 0.9684684684684685,
+      "overall_accuracy": 0.7442622950819672
+    },
+    "layer_16_control": {
+      "tp_correct": 17,
+      "tp_total": 83,
+      "tn_correct": 200,
+      "tn_total": 222,
+      "tp_accuracy": 0.20481927710843373,
+      "tn_accuracy": 0.9009009009009009,
+      "overall_accuracy": 0.7114754098360656
+    }
+  },
+  "head_ablation": {
+    "L0H2": {
+      "tp_correct": 51,
+      "tp_total": 83,
+      "tn_correct": 211,
+      "tn_total": 222,
+      "tp_accuracy": 0.6144578313253012,
+      "tn_accuracy": 0.9504504504504504,
+      "overall_accuracy": 0.8590163934426229
+    },
+    "L5H2": {
+      "tp_correct": 51,
+      "tp_total": 83,
+      "tn_correct": 211,
+      "tn_total": 222,
+      "tp_accuracy": 0.6144578313253012,
+      "tn_accuracy": 0.9504504504504504,
+      "overall_accuracy": 0.8590163934426229
+    },
+    "L2H2": {
+      "tp_correct": 51,
+      "tp_total": 83,
+      "tn_correct": 211,
+      "tn_total": 222,
+      "tp_accuracy": 0.6144578313253012,
+      "tn_accuracy": 0.9504504504504504,
+      "overall_accuracy": 0.8590163934426229
+    }
+  },
+  "neuron_ablation": {
+    "layer_6_neurons": {
+      "tp_correct": 57,
+      "tp_total": 83,
+      "tn_correct": 203,
+      "tn_total": 222,
+      "tp_accuracy": 0.6867469879518072,
+      "tn_accuracy": 0.9144144144144144,
+      "overall_accuracy": 0.8524590163934426
+    },
+    "layer_7_neurons": {
+      "tp_correct": 42,
+      "tp_total": 83,
+      "tn_correct": 209,
+      "tn_total": 222,
+      "tp_accuracy": 0.5060240963855421,
+      "tn_accuracy": 0.9414414414414415,
+      "overall_accuracy": 0.8229508196721311
+    },
+    "layer_10_neurons": {
+      "tp_correct": 54,
+      "tp_total": 83,
+      "tn_correct": 207,
+      "tn_total": 222,
+      "tp_accuracy": 0.6506024096385542,
+      "tn_accuracy": 0.9324324324324325,
+      "overall_accuracy": 0.8557377049180328
+    },
+    "layer_11_neurons": {
+      "tp_correct": 53,
+      "tp_total": 83,
+      "tn_correct": 211,
+      "tn_total": 222,
+      "tp_accuracy": 0.6385542168674698,
+      "tn_accuracy": 0.9504504504504504,
+      "overall_accuracy": 0.8655737704918033
+    }
+  }
+}

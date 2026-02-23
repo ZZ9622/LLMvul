@@ -1,0 +1,385 @@
+================================================================================
+Bidirectional Steering Experiment (Vector Addition)
+================================================================================
+Method: output = original + coeff × (Mean_Vuln - Mean_Safe)
+Steering Coefficient: 8
+Timestamp: 20260222_230703
+Device: cuda:0
+Output: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_230703
+================================================================================
+
+[1/8] Loading Model & Tokenizer...
+Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s]Fetching 26 files:   4%|▍         | 1/26 [00:00<00:20,  1.20it/s]Fetching 26 files:  42%|████▏     | 11/26 [00:00<00:00, 15.47it/s]Fetching 26 files:  69%|██████▉   | 18/26 [00:01<00:00, 24.34it/s]Fetching 26 files:  96%|█████████▌| 25/26 [00:01<00:00, 33.15it/s]Fetching 26 files: 100%|██████████| 26/26 [00:01<00:00, 22.02it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:13<00:26, 13.14s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:32<00:17, 17.02s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:34<00:00, 10.09s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:34<00:00, 11.57s/it]
+Loaded pretrained model Chun9622/llmvul-finetuned-gemma into HookedTransformer
+  Model: Gemma-2-2B
+  Layers: 26
+  Hidden size (d_model): 2304
+
+[2/8] Step 1: Computing Mean Safe Vectors from TN samples...
+  Loaded 222 TN (safe) samples
+  Extracting residual stream activations...
+    Progress: 10/222
+    Progress: 20/222
+    Progress: 30/222
+    Progress: 40/222
+    Progress: 50/222
+    Progress: 60/222
+    Progress: 70/222
+    Progress: 80/222
+    Progress: 90/222
+    Progress: 100/222
+    Progress: 110/222
+    Progress: 120/222
+    Progress: 130/222
+    Progress: 140/222
+    Progress: 150/222
+    Progress: 160/222
+    Progress: 170/222
+    Progress: 180/222
+    Progress: 190/222
+    Progress: 200/222
+    Progress: 210/222
+    Progress: 220/222
+  Computing mean vectors for each layer...
+    Layer 0: averaged 222 samples
+    Layer 1: averaged 222 samples
+    Layer 2: averaged 222 samples
+    Layer 3: averaged 222 samples
+    Layer 4: averaged 222 samples
+    Layer 5: averaged 222 samples
+    Layer 6: averaged 222 samples
+    Layer 7: averaged 222 samples
+    Layer 8: averaged 222 samples
+    Layer 9: averaged 222 samples
+    Layer 10: averaged 222 samples
+    Layer 11: averaged 222 samples
+    Layer 12: averaged 222 samples
+    Layer 13: averaged 222 samples
+    Layer 14: averaged 222 samples
+    Layer 15: averaged 222 samples
+    Layer 16: averaged 222 samples
+    Layer 17: averaged 222 samples
+    Layer 18: averaged 222 samples
+    Layer 19: averaged 222 samples
+    Layer 20: averaged 222 samples
+    Layer 21: averaged 222 samples
+    Layer 22: averaged 222 samples
+    Layer 23: averaged 222 samples
+    Layer 24: averaged 222 samples
+    Layer 25: averaged 222 samples
+  Mean Safe Cache computed for 26 layers
+
+[3/8] Step 2: Computing Mean Vulnerable Vectors from TP samples...
+  Loaded 83 TP (vulnerable) samples
+  Extracting residual stream activations...
+    Progress: 10/83
+    Progress: 20/83
+    Progress: 30/83
+    Progress: 40/83
+    Progress: 50/83
+    Progress: 60/83
+    Progress: 70/83
+    Progress: 80/83
+  Computing mean vectors for each layer...
+    Layer 0: averaged 83 samples
+    Layer 1: averaged 83 samples
+    Layer 2: averaged 83 samples
+    Layer 3: averaged 83 samples
+    Layer 4: averaged 83 samples
+    Layer 5: averaged 83 samples
+    Layer 6: averaged 83 samples
+    Layer 7: averaged 83 samples
+    Layer 8: averaged 83 samples
+    Layer 9: averaged 83 samples
+    Layer 10: averaged 83 samples
+    Layer 11: averaged 83 samples
+    Layer 12: averaged 83 samples
+    Layer 13: averaged 83 samples
+    Layer 14: averaged 83 samples
+    Layer 15: averaged 83 samples
+    Layer 16: averaged 83 samples
+    Layer 17: averaged 83 samples
+    Layer 18: averaged 83 samples
+    Layer 19: averaged 83 samples
+    Layer 20: averaged 83 samples
+    Layer 21: averaged 83 samples
+    Layer 22: averaged 83 samples
+    Layer 23: averaged 83 samples
+    Layer 24: averaged 83 samples
+    Layer 25: averaged 83 samples
+  Mean Vulnerable Cache computed for 26 layers
+
+[4/8] Step 3: Filtering baseline vulnerable samples (predict 'vul')...
+  Running baseline predictions (target label: vul)...
+    Progress: 10/83
+    Progress: 20/83
+    Progress: 30/83
+    Progress: 40/83
+    Progress: 50/83
+    Progress: 60/83
+    Progress: 70/83
+    Progress: 80/83
+  ✓ Selected 52 vulnerable samples (baseline: all predict 'vul')
+
+[5/8] Step 4: Filtering baseline safe samples (predict 'nonvul')...
+  Running baseline predictions (target label: nonvul)...
+    Progress: 10/222
+    Progress: 20/222
+    Progress: 30/222
+    Progress: 40/222
+    Progress: 50/222
+    Progress: 60/222
+    Progress: 70/222
+    Progress: 80/222
+    Progress: 90/222
+    Progress: 100/222
+    Progress: 110/222
+    Progress: 120/222
+    Progress: 130/222
+    Progress: 140/222
+    Progress: 150/222
+    Progress: 160/222
+    Progress: 170/222
+    Progress: 180/222
+    Progress: 190/222
+    Progress: 200/222
+    Progress: 210/222
+    Progress: 220/222
+  ✓ Selected 211 safe samples (baseline: all predict 'nonvul')
+
+[6/8] Step 5: Computing Steering Vectors...
+  Steering Vector = Mean_Vuln - Mean_Safe
+  Steering Coefficient = 8
+    Layer 0: ||steering|| = 6.0543
+    Layer 1: ||steering|| = 8.7754
+    Layer 2: ||steering|| = 8.4850
+    Layer 3: ||steering|| = 9.4176
+    Layer 4: ||steering|| = 10.4058
+    Layer 5: ||steering|| = 11.5077
+    Layer 6: ||steering|| = 10.5376
+    Layer 7: ||steering|| = 11.8971
+    Layer 8: ||steering|| = 13.5153
+    Layer 9: ||steering|| = 15.6715
+    Layer 10: ||steering|| = 16.6034
+    Layer 11: ||steering|| = 17.7880
+    Layer 12: ||steering|| = 18.3239
+    Layer 13: ||steering|| = 22.8924
+    Layer 14: ||steering|| = 24.6806
+    Layer 15: ||steering|| = 29.0795
+    Layer 16: ||steering|| = 33.9977
+    Layer 17: ||steering|| = 34.7499
+    Layer 18: ||steering|| = 39.6777
+    Layer 19: ||steering|| = 43.4102
+    Layer 20: ||steering|| = 47.4166
+    Layer 21: ||steering|| = 56.0900
+    Layer 22: ||steering|| = 63.6965
+    Layer 23: ||steering|| = 73.4289
+    Layer 24: ||steering|| = 87.3779
+    Layer 25: ||steering|| = 129.6698
+  ✓ Computed steering vectors for 26 layers
+
+[7/8] Step 6: Direction 1 – Safe → Vulnerable
+  (Steering vulnerable samples toward safe: output = orig - coeff * steering)
+
+[S→V] Layer-by-layer Steering Sweep (coeff=8, sign=-1)...
+
+  [Layer 0/25] Applying steering vector...
+    Flipped: 4/52 (7.7%)
+
+  [Layer 1/25] Applying steering vector...
+    Flipped: 6/52 (11.5%)
+
+  [Layer 2/25] Applying steering vector...
+    Flipped: 3/52 (5.8%)
+
+  [Layer 3/25] Applying steering vector...
+    Flipped: 3/52 (5.8%)
+
+  [Layer 4/25] Applying steering vector...
+    Flipped: 9/52 (17.3%)
+
+  [Layer 5/25] Applying steering vector...
+    Flipped: 6/52 (11.5%)
+
+  [Layer 6/25] Applying steering vector...
+    Flipped: 12/52 (23.1%)
+
+  [Layer 7/25] Applying steering vector...
+    Flipped: 14/52 (26.9%)
+
+  [Layer 8/25] Applying steering vector...
+    Flipped: 18/52 (34.6%)
+
+  [Layer 9/25] Applying steering vector...
+    Flipped: 18/52 (34.6%)
+
+  [Layer 10/25] Applying steering vector...
+    Flipped: 27/52 (51.9%)
+
+  [Layer 11/25] Applying steering vector...
+    Flipped: 17/52 (32.7%)
+
+  [Layer 12/25] Applying steering vector...
+    Flipped: 29/52 (55.8%)
+
+  [Layer 13/25] Applying steering vector...
+    Flipped: 30/52 (57.7%)
+
+  [Layer 14/25] Applying steering vector...
+    Flipped: 30/52 (57.7%)
+
+  [Layer 15/25] Applying steering vector...
+    Flipped: 27/52 (51.9%)
+
+  [Layer 16/25] Applying steering vector...
+    Flipped: 29/52 (55.8%)
+
+  [Layer 17/25] Applying steering vector...
+    Flipped: 19/52 (36.5%)
+
+  [Layer 18/25] Applying steering vector...
+    Flipped: 9/52 (17.3%)
+
+  [Layer 19/25] Applying steering vector...
+    Flipped: 6/52 (11.5%)
+
+  [Layer 20/25] Applying steering vector...
+    Flipped: 7/52 (13.5%)
+
+  [Layer 21/25] Applying steering vector...
+    Flipped: 8/52 (15.4%)
+
+  [Layer 22/25] Applying steering vector...
+    Flipped: 10/52 (19.2%)
+
+  [Layer 23/25] Applying steering vector...
+    Flipped: 13/52 (25.0%)
+
+  [Layer 24/25] Applying steering vector...
+    Flipped: 16/52 (30.8%)
+
+  [Layer 25/25] Applying steering vector...
+    Flipped: 45/52 (86.5%)
+
+[8/8] Step 7: Direction 2 – Vulnerable → Safe
+  (Steering safe samples toward vulnerable: output = orig + coeff * steering)
+
+[V→S] Layer-by-layer Steering Sweep (coeff=8, sign=+1)...
+
+  [Layer 0/25] Applying steering vector...
+    Flipped: 29/211 (13.7%)
+
+  [Layer 1/25] Applying steering vector...
+    Flipped: 138/211 (65.4%)
+
+  [Layer 2/25] Applying steering vector...
+    Flipped: 90/211 (42.7%)
+
+  [Layer 3/25] Applying steering vector...
+    Flipped: 87/211 (41.2%)
+
+  [Layer 4/25] Applying steering vector...
+    Flipped: 132/211 (62.6%)
+
+  [Layer 5/25] Applying steering vector...
+    Flipped: 127/211 (60.2%)
+
+  [Layer 6/25] Applying steering vector...
+    Flipped: 110/211 (52.1%)
+
+  [Layer 7/25] Applying steering vector...
+    Flipped: 101/211 (47.9%)
+
+  [Layer 8/25] Applying steering vector...
+    Flipped: 126/211 (59.7%)
+
+  [Layer 9/25] Applying steering vector...
+    Flipped: 144/211 (68.2%)
+
+  [Layer 10/25] Applying steering vector...
+    Flipped: 157/211 (74.4%)
+
+  [Layer 11/25] Applying steering vector...
+    Flipped: 170/211 (80.6%)
+
+  [Layer 12/25] Applying steering vector...
+    Flipped: 170/211 (80.6%)
+
+  [Layer 13/25] Applying steering vector...
+    Flipped: 184/211 (87.2%)
+
+  [Layer 14/25] Applying steering vector...
+    Flipped: 185/211 (87.7%)
+
+  [Layer 15/25] Applying steering vector...
+    Flipped: 181/211 (85.8%)
+
+  [Layer 16/25] Applying steering vector...
+    Flipped: 182/211 (86.3%)
+
+  [Layer 17/25] Applying steering vector...
+    Flipped: 176/211 (83.4%)
+
+  [Layer 18/25] Applying steering vector...
+    Flipped: 157/211 (74.4%)
+
+  [Layer 19/25] Applying steering vector...
+    Flipped: 148/211 (70.1%)
+
+  [Layer 20/25] Applying steering vector...
+    Flipped: 26/211 (12.3%)
+
+  [Layer 21/25] Applying steering vector...
+    Flipped: 113/211 (53.6%)
+
+  [Layer 22/25] Applying steering vector...
+    Flipped: 64/211 (30.3%)
+
+  [Layer 23/25] Applying steering vector...
+    Flipped: 58/211 (27.5%)
+
+  [Layer 24/25] Applying steering vector...
+    Flipped: 24/211 (11.4%)
+
+  [Layer 25/25] Applying steering vector...
+    Flipped: 15/211 (7.1%)
+
+[9/9] Step 8: Computing statistics and generating visualizations...
+
+  Direction 1 (Safe → Vulnerable):
+    Key Layer: 25 (Flip Rate: 86.5%)
+
+  Direction 2 (Vulnerable → Safe):
+    Key Layer: 14 (Flip Rate: 87.7%)
+
+  Generating visualizations...
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_230703/flip_rate_bidirectional.png
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_230703/flip_rate_by_stage.png
+
+  Saving results...
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_patching_20260222_230703/causal_patching_results.json
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_patching_20260222_230703/CAUSAL_PATCHING_SUMMARY.md
+
+================================================================================
+BIDIRECTIONAL STEERING EXPERIMENT COMPLETE
+================================================================================
+
+Method: Vector Addition Steering
+Formula: output = original + 8 × (Mean_Vuln - Mean_Safe)
+
+Direction 1 (Safe → Vulnerable):
+  Critical Layer: 25 (86.5% flip rate)
+  Stage Rates: Early=13.7%, Middle=48.1%, Late=28.4%
+
+Direction 2 (Vulnerable → Safe):
+  Critical Layer: 14 (87.7% flip rate)
+  Stage Rates: Early=48.2%, Middle=78.9%, Late=41.1%
+
+Layer Agreement: 11 layers difference
+
+Generated files:
+  Plots: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_230703
+  Logs: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_patching_20260222_230703
+
+================================================================================

@@ -1,0 +1,201 @@
+================================================================================
+Causal Patching Experiment for Vulnerability Detection
+================================================================================
+Timestamp: 20260222_203044
+Device: cuda:0
+Output: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_203044
+================================================================================
+
+[1/6] Loading Model & Tokenizer...
+Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s]Fetching 26 files:   4%|▍         | 1/26 [00:00<00:11,  2.15it/s]Fetching 26 files:  35%|███▍      | 9/26 [00:00<00:00, 19.63it/s]Fetching 26 files:  54%|█████▍    | 14/26 [00:00<00:00, 19.05it/s]Fetching 26 files: 100%|██████████| 26/26 [00:00<00:00, 30.40it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:06<00:12,  6.07s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:15<00:08,  8.16s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:16<00:00,  4.74s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:16<00:00,  5.46s/it]
+Loaded pretrained model Chun9622/llmvul-finetuned-gemma into HookedTransformer
+  Model: Gemma-2-2B
+  Layers: 26
+  Hidden size (d_model): 2304
+
+[2/6] Step 1: Computing Mean Safe Vectors from TN samples...
+  Loaded 222 TN (safe) samples
+  Extracting residual stream activations...
+    Progress: 10/222
+    Progress: 20/222
+    Progress: 30/222
+    Progress: 40/222
+    Progress: 50/222
+    Progress: 60/222
+    Progress: 70/222
+    Progress: 80/222
+    Progress: 90/222
+    Progress: 100/222
+    Progress: 110/222
+    Progress: 120/222
+    Progress: 130/222
+    Progress: 140/222
+    Progress: 150/222
+    Progress: 160/222
+    Progress: 170/222
+    Progress: 180/222
+    Progress: 190/222
+    Progress: 200/222
+    Progress: 210/222
+    Progress: 220/222
+  Computing mean vectors for each layer...
+    Layer 0: averaged 222 samples
+    Layer 1: averaged 222 samples
+    Layer 2: averaged 222 samples
+    Layer 3: averaged 222 samples
+    Layer 4: averaged 222 samples
+    Layer 5: averaged 222 samples
+    Layer 6: averaged 222 samples
+    Layer 7: averaged 222 samples
+    Layer 8: averaged 222 samples
+    Layer 9: averaged 222 samples
+    Layer 10: averaged 222 samples
+    Layer 11: averaged 222 samples
+    Layer 12: averaged 222 samples
+    Layer 13: averaged 222 samples
+    Layer 14: averaged 222 samples
+    Layer 15: averaged 222 samples
+    Layer 16: averaged 222 samples
+    Layer 17: averaged 222 samples
+    Layer 18: averaged 222 samples
+    Layer 19: averaged 222 samples
+    Layer 20: averaged 222 samples
+    Layer 21: averaged 222 samples
+    Layer 22: averaged 222 samples
+    Layer 23: averaged 222 samples
+    Layer 24: averaged 222 samples
+    Layer 25: averaged 222 samples
+  Mean Safe Cache computed for 26 layers
+
+[3/6] Step 2: Filtering baseline vulnerable samples...
+  Loaded 83 TP (vulnerable) candidate samples
+  Running baseline predictions (without patching)...
+    Progress: 10/83
+    Progress: 20/83
+    Progress: 30/83
+    Progress: 40/83
+    Progress: 50/83
+    Progress: 60/83
+    Progress: 70/83
+    Progress: 80/83
+  ✓ Selected 51 vulnerable samples (baseline: all predict 'vul')
+
+[4/6] Step 3: Layer-by-layer Patching Sweep...
+
+  [Layer 0/25] Patching residual stream...
+    Flipped: 6/51 (11.8%)
+
+  [Layer 1/25] Patching residual stream...
+    Flipped: 5/51 (9.8%)
+
+  [Layer 2/25] Patching residual stream...
+    Flipped: 3/51 (5.9%)
+
+  [Layer 3/25] Patching residual stream...
+    Flipped: 4/51 (7.8%)
+
+  [Layer 4/25] Patching residual stream...
+    Flipped: 4/51 (7.8%)
+
+  [Layer 5/25] Patching residual stream...
+    Flipped: 6/51 (11.8%)
+
+  [Layer 6/25] Patching residual stream...
+    Flipped: 6/51 (11.8%)
+
+  [Layer 7/25] Patching residual stream...
+    Flipped: 6/51 (11.8%)
+
+  [Layer 8/25] Patching residual stream...
+    Flipped: 3/51 (5.9%)
+
+  [Layer 9/25] Patching residual stream...
+    Flipped: 8/51 (15.7%)
+
+  [Layer 10/25] Patching residual stream...
+    Flipped: 9/51 (17.6%)
+
+  [Layer 11/25] Patching residual stream...
+    Flipped: 11/51 (21.6%)
+
+  [Layer 12/25] Patching residual stream...
+    Flipped: 17/51 (33.3%)
+
+  [Layer 13/25] Patching residual stream...
+    Flipped: 18/51 (35.3%)
+
+  [Layer 14/25] Patching residual stream...
+    Flipped: 21/51 (41.2%)
+
+  [Layer 15/25] Patching residual stream...
+    Flipped: 18/51 (35.3%)
+
+  [Layer 16/25] Patching residual stream...
+    Flipped: 21/51 (41.2%)
+
+  [Layer 17/25] Patching residual stream...
+    Flipped: 14/51 (27.5%)
+
+  [Layer 18/25] Patching residual stream...
+    Flipped: 13/51 (25.5%)
+
+  [Layer 19/25] Patching residual stream...
+    Flipped: 12/51 (23.5%)
+
+  [Layer 20/25] Patching residual stream...
+    Flipped: 13/51 (25.5%)
+
+  [Layer 21/25] Patching residual stream...
+    Flipped: 13/51 (25.5%)
+
+  [Layer 22/25] Patching residual stream...
+    Flipped: 10/51 (19.6%)
+
+  [Layer 23/25] Patching residual stream...
+    Flipped: 10/51 (19.6%)
+
+  [Layer 24/25] Patching residual stream...
+    Flipped: 10/51 (19.6%)
+
+  [Layer 25/25] Patching residual stream...
+    Flipped: 8/51 (15.7%)
+
+  ✓ Patching sweep completed for all 26 layers
+
+[5/6] Step 4: Computing statistics...
+
+  Key Layer: 14 (Flip Rate: 41.2%)
+
+  Top-5 Most Effective Layers:
+    Layer 14: 41.2%
+    Layer 16: 41.2%
+    Layer 13: 35.3%
+    Layer 15: 35.3%
+    Layer 12: 33.3%
+
+[6/6] Step 5: Generating visualizations...
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_203044/flip_rate_curve.png
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_203044/flip_heatmap.png
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_203044/flip_rate_by_stage.png
+
+  Saving results...
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_patching_20260222_203044/causal_patching_results.json
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_patching_20260222_203044/CAUSAL_PATCHING_SUMMARY.md
+
+================================================================================
+EXPERIMENT COMPLETE
+================================================================================
+
+Key Finding: Layer 14 is the critical decision layer (41.2% flip rate)
+
+Generated files:
+  Plots: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_patching_20260222_203044
+  Logs: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_patching_20260222_203044
+
+Interpretation:
+  - Early layers (avg 9.8%): Still processing syntax
+  - Middle layers (avg 27.5%): Forming semantic understanding
+  - Late layers (avg 22.4%): Final decision-making
+
+================================================================================

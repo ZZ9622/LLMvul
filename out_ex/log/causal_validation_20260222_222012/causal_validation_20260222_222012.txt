@@ -1,0 +1,386 @@
+================================================================================
+Causal Validation Experiment: Ablation Studies
+================================================================================
+Timestamp: 20260222_222012
+Device: cuda:0
+Data: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/data/tp_tn_samples.jsonl
+Neuron IDs: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/data/neuron_analysis.json
+================================================================================
+
+[1/7] Loading Model & Tokenizer...
+Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s]Fetching 26 files:   4%|▍         | 1/26 [00:00<00:09,  2.55it/s]Fetching 26 files:  35%|███▍      | 9/26 [00:00<00:00, 21.86it/s]Fetching 26 files:  65%|██████▌   | 17/26 [00:00<00:00, 35.61it/s]Fetching 26 files:  96%|█████████▌| 25/26 [00:00<00:00, 43.34it/s]Fetching 26 files: 100%|██████████| 26/26 [00:00<00:00, 33.86it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:08<00:16,  8.40s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:22<00:11, 11.77s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:23<00:00,  6.96s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:23<00:00,  7.92s/it]
+Loaded pretrained model Chun9622/llmvul-finetuned-gemma into HookedTransformer
+  Model: Gemma-2-2B
+  Layers: 26, Heads: 8, d_model: 2304
+
+[2/7] Loading TP/TN samples from /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/data/tp_tn_samples.jsonl...
+  Loaded 83 TP samples (vulnerable)
+  Loaded 222 TN samples (safe)
+  Total: 305 samples
+
+[3/7] Computing Baseline (No Ablation)...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Baseline:
+      TP Accuracy: 100.00% (83/83)
+      TN Accuracy: 100.00% (222/222)
+      Overall Accuracy: 100.00%
+
+[4/7] Experiment 1: Layer-wise Ablation...
+
+  Testing KEY layers (should cause accuracy drop):
+
+  Ablating Layer 6...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 6 Ablated:
+      TP Accuracy: 27.71% (23/83)
+      TN Accuracy: 94.59% (210/222)
+      Overall Accuracy: 76.39%
+
+  Ablating Layer 7...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 7 Ablated:
+      TP Accuracy: 19.28% (16/83)
+      TN Accuracy: 63.06% (140/222)
+      Overall Accuracy: 51.15%
+
+  Ablating Layer 10...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 10 Ablated:
+      TP Accuracy: 19.28% (16/83)
+      TN Accuracy: 96.85% (215/222)
+      Overall Accuracy: 75.74%
+
+  Ablating Layer 11...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 11 Ablated:
+      TP Accuracy: 6.02% (5/83)
+      TN Accuracy: 64.86% (144/222)
+      Overall Accuracy: 48.85%
+
+  Testing CONTROL layers (should have minimal impact):
+
+  Ablating Layer 1...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 1 Ablated:
+      TP Accuracy: 54.22% (45/83)
+      TN Accuracy: 51.35% (114/222)
+      Overall Accuracy: 52.13%
+
+  Ablating Layer 2...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 2 Ablated:
+      TP Accuracy: 15.66% (13/83)
+      TN Accuracy: 64.86% (144/222)
+      Overall Accuracy: 51.48%
+
+  Ablating Layer 15...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 15 Ablated:
+      TP Accuracy: 14.46% (12/83)
+      TN Accuracy: 96.85% (215/222)
+      Overall Accuracy: 74.43%
+
+  Ablating Layer 16...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    Layer 16 Ablated:
+      TP Accuracy: 20.48% (17/83)
+      TN Accuracy: 90.09% (200/222)
+      Overall Accuracy: 71.15%
+
+[5/7] Experiment 2: Attention Head Ablation...
+
+  Testing Top-3 important heads:
+
+  Ablating Layer 0, Head 2...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    L0H2 Ablated:
+      TP Accuracy: 61.45% (51/83)
+      TN Accuracy: 95.05% (211/222)
+      Overall Accuracy: 85.90%
+
+  Ablating Layer 5, Head 2...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    L5H2 Ablated:
+      TP Accuracy: 61.45% (51/83)
+      TN Accuracy: 95.05% (211/222)
+      Overall Accuracy: 85.90%
+
+  Ablating Layer 2, Head 2...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    L2H2 Ablated:
+      TP Accuracy: 61.45% (51/83)
+      TN Accuracy: 95.05% (211/222)
+      Overall Accuracy: 85.90%
+
+[6/7] Experiment 3: MLP Neuron Ablation...
+
+  Testing Top-20 neurons in key layers:
+
+  Ablating Layer 6 Top-20 neurons...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    L6 Neurons Ablated:
+      TP Accuracy: 68.67% (57/83)
+      TN Accuracy: 91.44% (203/222)
+      Overall Accuracy: 85.25%
+
+  Ablating Layer 7 Top-20 neurons...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    L7 Neurons Ablated:
+      TP Accuracy: 50.60% (42/83)
+      TN Accuracy: 94.14% (209/222)
+      Overall Accuracy: 82.30%
+
+  Ablating Layer 10 Top-20 neurons...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    L10 Neurons Ablated:
+      TP Accuracy: 65.06% (54/83)
+      TN Accuracy: 93.24% (207/222)
+      Overall Accuracy: 85.57%
+
+  Ablating Layer 11 Top-20 neurons...
+    Progress: 20/305
+    Progress: 40/305
+    Progress: 60/305
+    Progress: 80/305
+    Progress: 100/305
+    Progress: 120/305
+    Progress: 140/305
+    Progress: 160/305
+    Progress: 180/305
+    Progress: 200/305
+    Progress: 220/305
+    Progress: 240/305
+    Progress: 260/305
+    Progress: 280/305
+    Progress: 300/305
+    L11 Neurons Ablated:
+      TP Accuracy: 63.86% (53/83)
+      TN Accuracy: 95.05% (211/222)
+      Overall Accuracy: 86.56%
+
+[7/7] Generating Results...
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_validation_20260222_222012/ablation_results.json
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_validation_20260222_222012/ablation_comparison.png
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_validation_20260222_222012/tp_tn_breakdown.png
+  Saved: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_validation_20260222_222012/ABLATION_REPORT.md
+
+================================================================================
+CAUSAL VALIDATION COMPLETE
+================================================================================
+
+Generated files:
+  Results: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/causal_validation_20260222_222012
+  Plots: /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/causal_validation_20260222_222012
+
+================================================================================

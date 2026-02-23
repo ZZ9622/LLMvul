@@ -1,0 +1,90 @@
+================================================================================
+MLP Neuron Activation Analysis for Vulnerability Detection
+================================================================================
+Timestamp : 20260222_231938
+Device    : cuda:0
+Output    : /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938
+Layers    : [6, 7, 10, 11]
+Top-K     : 20
+================================================================================
+
+[INFO] Loading tokenizer...
+[INFO] Loading ReplacementModel...
+Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s]Fetching 26 files:   4%|3         | 1/26 [00:00<00:17,  1.44it/s]Fetching 26 files:  12%|#1        | 3/26 [00:00<00:05,  4.55it/s]Fetching 26 files:  42%|####2     | 11/26 [00:00<00:00, 18.76it/s]Fetching 26 files:  73%|#######3  | 19/26 [00:01<00:00, 30.26it/s]Fetching 26 files: 100%|##########| 26/26 [00:01<00:00, 22.96it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|###3      | 1/3 [00:12<00:24, 12.45s/it]Loading checkpoint shards:  67%|######6   | 2/3 [00:29<00:15, 15.31s/it]Loading checkpoint shards: 100%|##########| 3/3 [00:31<00:00,  9.12s/it]Loading checkpoint shards: 100%|##########| 3/3 [00:31<00:00, 10.51s/it]
+Loaded pretrained model Chun9622/llmvul-finetuned-gemma into HookedTransformer
+[INFO] Model loaded.
+
+[INFO] Reading from /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/data/tp_tn_samples.jsonl
+[INFO] VUL (TP) samples  : 83
+[INFO] NONVUL (TN) samples: 222
+
+[VUL_TP] Processing 83 samples (type='vul')...
+[INFO] Layer 6: capturing from 'blocks.6.mlp.old_mlp.hook_post', shape=torch.Size([8, 512, 9216])
+[INFO] Layer 7: capturing from 'blocks.7.mlp.old_mlp.hook_post', shape=torch.Size([8, 512, 9216])
+[INFO] Layer 10: capturing from 'blocks.10.mlp.old_mlp.hook_post', shape=torch.Size([8, 512, 9216])
+[INFO] Layer 11: capturing from 'blocks.11.mlp.old_mlp.hook_post', shape=torch.Size([8, 512, 9216])
+  [VUL_TP] 40/83
+  [VUL_TP] 80/83
+  [VUL_TP] 83/83
+  [VUL_TP] Capture summary:
+    Layer 6: vul=83, nonvul=0
+    Layer 7: vul=83, nonvul=0
+    Layer 10: vul=83, nonvul=0
+    Layer 11: vul=83, nonvul=0
+
+[NONVUL_TN] Processing 222 samples (type='nonvul')...
+[INFO] Layer 6: capturing from 'blocks.6.mlp.old_mlp.hook_post', shape=torch.Size([8, 424, 9216])
+[INFO] Layer 7: capturing from 'blocks.7.mlp.old_mlp.hook_post', shape=torch.Size([8, 424, 9216])
+[INFO] Layer 10: capturing from 'blocks.10.mlp.old_mlp.hook_post', shape=torch.Size([8, 424, 9216])
+[INFO] Layer 11: capturing from 'blocks.11.mlp.old_mlp.hook_post', shape=torch.Size([8, 424, 9216])
+  [NONVUL_TN] 40/222
+  [NONVUL_TN] 80/222
+  [NONVUL_TN] 120/222
+  [NONVUL_TN] 160/222
+  [NONVUL_TN] 200/222
+  [NONVUL_TN] 222/222
+  [NONVUL_TN] Capture summary:
+    Layer 6: vul=83, nonvul=222
+    Layer 7: vul=83, nonvul=222
+    Layer 10: vul=83, nonvul=222
+    Layer 11: vul=83, nonvul=222
+
+[INFO] Starting neuron specialisation analysis...
+
+[LAYER 6]
+  VUL samples   : 83
+  NONVUL samples: 222
+  Heatmap: 50 VUL + 50 SAFE samples
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_6_mlp_neuron_heatmap.png
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_6_neuron_selectivity.png
+
+[LAYER 7]
+  VUL samples   : 83
+  NONVUL samples: 222
+  Heatmap: 50 VUL + 50 SAFE samples
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_7_mlp_neuron_heatmap.png
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_7_neuron_selectivity.png
+
+[LAYER 10]
+  VUL samples   : 83
+  NONVUL samples: 222
+  Heatmap: 50 VUL + 50 SAFE samples
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_10_mlp_neuron_heatmap.png
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_10_neuron_selectivity.png
+
+[LAYER 11]
+  VUL samples   : 83
+  NONVUL samples: 222
+  Heatmap: 50 VUL + 50 SAFE samples
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_11_mlp_neuron_heatmap.png
+  [SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938/layer_11_neuron_selectivity.png
+
+[SAVED] /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/mlp_neuron_20260222_231938/neuron_analysis.json
+
+================================================================================
+MLP NEURON ANALYSIS COMPLETE
+================================================================================
+Plots : /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/plots/mlp_neuron_20260222_231938
+Log   : /lunarc/nobackup/projects/lu2024-17-13/chun7871/LLMvul/out/log/mlp_neuron_20260222_231938
+================================================================================
