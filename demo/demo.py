@@ -78,24 +78,76 @@ def extract_label(text: str) -> str:
 
 
 def load_samples(n_per_class: int):
-    """Load first n_per_class vulnerable + n_per_class non-vulnerable samples."""
-    log(f"[1/3] Loading dataset ({DATASET_ID}) …")
-    from datasets import load_dataset  # type: ignore
-    ds = load_dataset(DATASET_ID)
+    """Load first n_per_class vulnerable + n_per_class non-vulnerable samples.
 
-    # Resolve splits
-    if "vulnerable" in ds and "non_vulnerable" in ds:
-        vul_split   = list(ds["vulnerable"])
-        nonvul_split = list(ds["non_vulnerable"])
-    elif "train" in ds:
-        all_recs = list(ds["train"])
-        vul_split    = [r for r in all_recs if r.get("target") == 1]
-        nonvul_split = [r for r in all_recs if r.get("target") == 0]
-    else:
-        key = list(ds.keys())[0]
-        all_recs = list(ds[key])
-        vul_split    = [r for r in all_recs if r.get("target") == 1]
-        nonvul_split = [r for r in all_recs if r.get("target") == 0]
+    Strategy:
+      1. Try HuggingFace dataset with data_files restricted to code JSONL files
+         (avoids mixed-column files accidentally present in the repo).
+      2. Fall back to the local data/tp_tn_samples.jsonl if HF loading fails.
+    """
+    import json as _json
+
+    log(f"[1/3] Loading dataset ({DATASET_ID}) …")
+
+    all_recs = None
+
+    # ── Attempt 1: HuggingFace, restrict to known code data files ────────────
+    try:
+        from datasets import load_dataset  # type: ignore
+        # Use trust_remote_code and load only the default parquet/jsonl files
+        # that contain the expected columns (idx, func, target, …).
+        # Explicitly exclude stray analysis files by pattern.
+        CODE_FILES = [
+            "*.parquet",
+        ]
+        try:
+            ds = load_dataset(DATASET_ID, data_files={"train": CODE_FILES})
+        except Exception:
+            # Parquet may not exist; try without filter (original behaviour)
+            ds = load_dataset(DATASET_ID, trust_remote_code=True)
+
+        if "vulnerable" in ds and "non_vulnerable" in ds:
+            vul_split    = list(ds["vulnerable"])
+            nonvul_split = list(ds["non_vulnerable"])
+        elif "train" in ds:
+            all_recs     = list(ds["train"])
+            vul_split    = [r for r in all_recs if r.get("target") == 1]
+            nonvul_split = [r for r in all_recs if r.get("target") == 0]
+        else:
+            key          = list(ds.keys())[0]
+            all_recs     = list(ds[key])
+            vul_split    = [r for r in all_recs if r.get("target") == 1]
+            nonvul_split = [r for r in all_recs if r.get("target") == 0]
+
+        log(f"  Source: HuggingFace ({DATASET_ID})")
+
+    except Exception as hf_err:
+        # ── Attempt 2: local tp_tn_samples.jsonl ─────────────────────────────
+        local_path = os.path.join(ROOT_DIR, "data", "tp_tn_samples.jsonl")
+        if not os.path.exists(local_path):
+            raise RuntimeError(
+                f"HuggingFace dataset loading failed ({hf_err}) and local "
+                f"fallback not found at {local_path}."
+            )
+        log(f"  [WARN] HuggingFace load failed: {hf_err}")
+        log(f"  Falling back to local file: {local_path}")
+
+        records = []
+        with open(local_path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    try:
+                        records.append(_json.loads(line))
+                    except Exception:
+                        pass
+
+        # tp_tn_samples uses prediction_type TP/TN; also support target 0/1
+        vul_split    = [r for r in records
+                        if r.get("prediction_type") == "TP" or r.get("target") == 1]
+        nonvul_split = [r for r in records
+                        if r.get("prediction_type") == "TN" or r.get("target") == 0]
+        log(f"  Source: local ({local_path})")
 
     vul_samples   = vul_split[:n_per_class]
     nonvul_samples = nonvul_split[:n_per_class]
