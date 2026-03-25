@@ -37,7 +37,7 @@ os.makedirs(PLOT_DIR, exist_ok=True)
 
 TOP_K_HEADS = 10
 VISUALIZE_TOP_N = 3
-MAX_SAMPLES_PER_TYPE = 100
+MAX_SAMPLES_PER_TYPE = 100 #You can comment this.
 MAX_SEQ_LENGTH = 512
 
 log_file = open(os.path.join(LOG_DIR, f"attention_analysis_{ts}.txt"), "w")
