@@ -667,12 +667,12 @@ with open(summary_path, 'w') as f:
     f.write(f"- **Source:** `tp_tn_samples.jsonl`\n\n")
     
     f.write("## Methodology\n\n")
-    f.write("1. Extract attention patterns from the last token position (prediction position)\n")
-    f.write("2. Compute attention concentration metrics:\n")
+    f.write("Extract attention patterns from the last token position (prediction position)\n")
+    f.write("Compute attention concentration metrics:\n")
     f.write("   - **Max attention**: Highest attention weight (focus strength)\n")
     f.write("   - **Entropy**: Distribution uniformity (lower = more focused)\n")
-    f.write("3. Calculate **Importance Score** = (Max_TP - Max_TN) + 0.5 × (Entropy_TN - Entropy_TP)\n")
-    f.write("4. Rank heads by absolute importance\n\n")
+    f.write("Calculate **Importance Score** = (Max_TP - Max_TN) + 0.5 × (Entropy_TN - Entropy_TP)\n")
+    f.write("Rank heads by absolute importance\n\n")
     
     f.write(f"## Top-{TOP_K_HEADS} Most Important Attention Heads\n\n")
     f.write("| Rank | Layer | Head | Importance | Max(TP) | Max(TN) | Entropy(TP) | Entropy(TN) | Pattern Detected |\n")
