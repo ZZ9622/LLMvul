@@ -164,14 +164,14 @@ def patch_model_config_loading():
 patch_model_loading()
 patch_model_config_loading()
 
-# === Load model & tokenizer ===
+
 print("[INFO] Loading tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 print("[INFO] Tokenizer loaded.")
 
-# 允许 TF32（Ampere+），并尝试提高 matmul 精度策略以提速
+
 if torch.cuda.is_available():
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
@@ -234,20 +234,6 @@ def compute_l0_per_layer(graph):
     return l0_per_layer
 
 def extract_label(text):
-    """
-    Extract vul/nonvul label from model output.
-    
-    v6 (2025-10-25): Enhanced to better handle code continuation and truncated outputs
-    Problem: 67% unknown due to code continuation being truncated before reaching answer
-    Solution: More aggressive pattern matching and fallback strategies
-    
-    Priority strategy:
-    0. Find "Answer:" and extract text after it
-    1. Look for "safe" or "vulnerable" keywords anywhere in output
-    2. Check for code-followed-by-answer pattern
-    3. Detect question echo patterns
-    4. Keyword analysis with lower threshold
-    """
     import re
     
     if not text or len(text.strip()) == 0:
@@ -570,7 +556,6 @@ def attribute_task(prompt, worker_id=0, max_nodes_init=MAX_FEATURE_NODES):
                 gc.collect()
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                # 尝试更保守的参数
                 max_nodes = max(30, int(max_nodes * 0.5))
                 continue
             else:
@@ -627,8 +612,7 @@ def process_samples_with_attr_pool(samples, tag):
                     "prompt": prompt
                 })
             idx += len(batch)
-            
-            # 批次之间小幅清理以保持内存稳定
+
             if idx % (PRED_BATCH_SIZE * 5) == 0:
                 gc.collect()
         
@@ -794,13 +778,13 @@ def calculate_classification_metrics(vul_results, nonvul_results):
     Compute classification metrics: TP, FP, TN, FN, accuracy, precision, recall, F1, and unknown counts.
     """
     # Initialize counters
-    tp = 0  # True Positive: 预测为vul且真实为vul
-    fp = 0  # False Positive: 预测为vul但真实为nonvul
-    tn = 0  # True Negative: 预测为nonvul且真实为nonvul
-    fn = 0  # False Negative: 预测为nonvul但真实为vul
+    tp = 0  
+    fp = 0  
+    tn = 0  
+    fn = 0  
     
-    unknown_vul = 0  # 真实为vul但预测为unknown
-    unknown_nonvul = 0  # 真实为nonvul但预测为unknown
+    unknown_vul = 0  
+    unknown_nonvul = 0 
     
     # Count for VUL samples (true label == vul)
     for result in vul_results:
