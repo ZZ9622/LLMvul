@@ -31,7 +31,6 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 KEYWORD_MAP = {
     "prime":                "prime.py",
     "attention":            "attention_analysis.py",
-    "attention_analysis":   "attention_analysis.py",
     "causal_patching":      "causal_patching.py",
     "causal_validation":    "causal_validation.py",
     "advanced_statistical": "advanced_statistical.py",
